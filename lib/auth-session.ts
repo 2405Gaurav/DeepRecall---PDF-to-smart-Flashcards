@@ -7,6 +7,7 @@ export type SessionUser = {
   displayName: string | null;
   childName: string | null;
   grade: string | null;
+  phone: string | null;
   onboardingCompletedAt: Date | null;
 };
 
@@ -22,6 +23,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       displayName: true,
       childName: true,
       grade: true,
+      phone: true,
       onboardingCompletedAt: true,
     },
   });

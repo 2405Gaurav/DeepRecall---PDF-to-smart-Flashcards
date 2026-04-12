@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useCallback, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Trophy, Handshake, Target, Sparkles } from 'lucide-react';
+import { Trophy, Handshake, Target, Sparkles, LogOut, User, BookOpen } from 'lucide-react';
 import { Navbar } from '@/components/cuemath/Navbar';
 import { CueFlashcardSection } from '@/components/cuemath/CueFlashcardSection';
 import { Footer } from '@/components/cuemath/Footer';
-import { OnboardingModal } from '@/components/cuemath/OnboardingModal';
+import { AuthModal } from '@/components/cuemath/AuthModal';
 import { FloatingParticles } from '@/components/ui/FloatingParticles';
 import { StreakBanner } from '@/components/ui/BadgeDisplay';
 import type { UserStreakPayload } from '@/lib/streaks';
 import { SlideCtaButton, SlideCtaLink } from '@/components/ui/SlideCtaButton';
+import { useAuth } from '@/hooks/useAuth';
+import { DEMO_OTP } from '@/lib/demo-otp';
 import {
   Accordion,
   AccordionContent,
@@ -27,11 +29,11 @@ const FAQ = [
   },
   {
     q: 'Where do I create decks?',
-    a: 'Complete Get started once, then open Your studio. Uploads require a short login (onboarding) so decks attach to you.',
+    a: 'Sign up or log in, then open Your studio. Uploads are tied to your account so decks are always accessible.',
   },
   {
-    q: 'Is my phone number verified with OTP?',
-    a: 'Not yet — we accept a dummy number for now. OTP can replace that step later.',
+    q: 'How does login/OTP work?',
+    a: `Enter any 10-digit phone number and verify with an OTP. For this demo, the universal OTP "${DEMO_OTP}" works with any number. In production, a real SMS gateway would be integrated.`,
   },
   {
     q: 'Which PDFs work best?',
@@ -53,58 +55,50 @@ const FAQ = [
 
 function HomeInner() {
   const searchParams = useSearchParams();
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [justFinishedOnboarding, setJustFinishedOnboarding] = useState(false);
-  const [sessionUser, setSessionUser] = useState<{
-    displayName: string | null;
-    onboarded: boolean;
-  } | null>(null);
+  const { user, loading: authLoading, logout } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
 
+  const isLoggedIn = !!user?.onboarded;
+
+  // fetch streak data when user changes
   useEffect(() => {
-    fetch('/api/me/session', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.user) {
-          setSessionUser({
-            displayName: d.user.displayName,
-            onboarded: d.user.onboarded,
-          });
-        } else {
-          setSessionUser(null);
-        }
-      })
-      .catch(() => setSessionUser(null));
-    // also fetch streak data for logged-in users
-    fetch('/api/me/streak', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => { if (d.streak) setStreakData(d.streak); })
-      .catch(() => {});
-  }, [justFinishedOnboarding]);
+    if (user) {
+      fetch('/api/me/streak', { credentials: 'include' })
+        .then((r) => r.json())
+        .then((d) => { if (d.streak) setStreakData(d.streak); })
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (searchParams.get('studio') === 'login') {
-      setOnboardingOpen(true);
+      setAuthMode('login');
+      setAuthOpen(true);
     }
   }, [searchParams]);
 
-  const showReadyCta = Boolean(sessionUser?.onboarded || justFinishedOnboarding);
-
-  const handleOnboardingDone = useCallback(() => {
-    setJustFinishedOnboarding(true);
-  }, []);
+  const openLogin = () => { setAuthMode('login'); setAuthOpen(true); };
+  const openSignup = () => { setAuthMode('signup'); setAuthOpen(true); };
 
   return (
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
-      <Navbar onGetStarted={() => setOnboardingOpen(true)} />
-      <OnboardingModal
-        open={onboardingOpen}
-        onOpenChange={setOnboardingOpen}
-        onComplete={handleOnboardingDone}
+      <Navbar
+        onGetStarted={openSignup}
+        onLogin={openLogin}
+        isLoggedIn={isLoggedIn}
+        userName={user?.displayName || null}
+        onLogout={logout}
+      />
+      <AuthModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        defaultMode={authMode}
       />
 
       <section className="relative mx-auto max-w-5xl px-4 pb-6 pt-10 sm:px-6 sm:pt-12 md:pt-14">
-        {/* floating emoji particles in hero for playful atmosphere */}
+        {/* floating emoji particles in hero */}
         <FloatingParticles />
 
         <motion.div
@@ -152,25 +146,56 @@ function HomeInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
-          <motion.div
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <SlideCtaButton onClick={() => setOnboardingOpen(true)}>🚀 Get Started</SlideCtaButton>
-          </motion.div>
-          <motion.div whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 400, damping: 28 }}>
-            <Link
-              href="/studio"
-              className="inline-flex rounded-xl px-1 text-base font-semibold text-lab-teal underline-offset-4 ring-lab-teal/15 transition hover:text-lab-teal-dark hover:underline hover:ring-2 sm:text-lg"
-            >
-              Already set up? Open your studio →
-            </Link>
-          </motion.div>
+          {isLoggedIn ? (
+            <>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <SlideCtaLink href="/studio">📚 Open Studio</SlideCtaLink>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/profile"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-lab-teal px-5 py-3 text-sm font-bold text-lab-teal transition hover:bg-lab-teal hover:text-white"
+                >
+                  <User className="h-4 w-4" /> My Profile
+                </Link>
+              </motion.div>
+            </>
+          ) : (
+            <>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <SlideCtaButton onClick={openSignup}>🚀 Sign Up</SlideCtaButton>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <button
+                  onClick={openLogin}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-lab-teal px-5 py-3 text-sm font-bold text-lab-teal transition hover:bg-lab-teal hover:text-white"
+                >
+                  🔑 Log In
+                </button>
+              </motion.div>
+            </>
+          )}
         </motion.div>
+
+        {/* demo OTP hint */}
+        {!isLoggedIn && (
+          <motion.div
+            className="mt-5 flex justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="flex items-center gap-2 rounded-full border border-lab-mint bg-lab-mint/40 px-4 py-2 text-xs text-lab-soft">
+              <Sparkles className="h-3.5 w-3.5 text-lab-amber" />
+              <span>Demo mode: use any 10-digit number + OTP</span>
+              <code className="rounded bg-white px-2 py-0.5 font-mono font-bold text-lab-teal shadow-sm">{DEMO_OTP}</code>
+            </div>
+          </motion.div>
+        )}
       </section>
 
-      {/* streak banner for logged-in users — shows between hero and features */}
-      {showReadyCta && streakData && (
+      {/* streak banner for logged-in users */}
+      {isLoggedIn && streakData && (
         <motion.div
           className="mx-auto max-w-xl px-4 pt-6 sm:px-6"
           initial={{ opacity: 0, y: 10 }}
@@ -183,7 +208,8 @@ function HomeInner() {
 
       <CueFlashcardSection />
 
-      {showReadyCta && (
+      {/* logged-in user quick access panel */}
+      {isLoggedIn && (
         <motion.div
           className="mx-auto max-w-4xl px-4 sm:px-6"
           initial={{ opacity: 0, scale: 0.98 }}
@@ -193,15 +219,23 @@ function HomeInner() {
           <div className="flex flex-col items-center gap-5 rounded-2xl border-2 border-lab-teal/40 bg-white/95 px-6 py-8 text-center shadow-lg sm:flex-row sm:justify-between sm:px-10 sm:text-left">
             <div>
               <p className="font-display text-xl font-bold text-lab-teal-dark sm:text-2xl md:text-3xl">
-                You&apos;re all set — let&apos;s create flashcards and study
+                Welcome back, {user?.displayName || 'Learner'}! 👋
               </p>
               <p className="mt-2 text-base text-lab-soft sm:text-lg">
-                Your studio has the generator, your decks, and personal analytics (reviews, high scores, growth).
+                Your studio has the generator, your decks, and personal analytics.
               </p>
             </div>
-            <SlideCtaLink href="/studio" className="shrink-0">
-              Open your studio →
-            </SlideCtaLink>
+            <div className="flex gap-3 shrink-0">
+              <SlideCtaLink href="/studio" className="shrink-0">
+                Open Studio →
+              </SlideCtaLink>
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-lab-teal px-4 py-3 text-sm font-bold text-lab-teal transition hover:bg-lab-teal hover:text-white"
+              >
+                <User className="h-4 w-4" /> Profile
+              </Link>
+            </div>
           </div>
         </motion.div>
       )}
@@ -224,7 +258,7 @@ function HomeInner() {
           },
           {
             title: 'PERFECT MATCH',
-            body: 'Bring your own PDFs — every deck and stat is tied to your studio login.',
+            body: 'Bring your own PDFs — every deck and stat is tied to your account.',
             Icon: Target,
             bg: 'bg-lab-sand/90',
             iconClass: 'text-lab-coral',
@@ -266,7 +300,7 @@ function HomeInner() {
             <h2 className="font-display text-base font-bold text-lab-teal-dark md:text-lg">Cuemath Flashcards lab</h2>
             <p className="mt-3 text-base leading-relaxed text-lab-soft md:text-lg">
               Inspired by Cuemath, with a <strong className="text-lab-ink">distinct teal & coral</strong> palette for
-              calmer study sessions. Complete <strong>Get started</strong> once, then use <strong>Your studio</strong>{' '}
+              calmer study sessions. Sign up once, then use <strong>Your studio</strong>{' '}
               to upload PDFs, review cards, and see your growth over time.
             </p>
           </div>
@@ -288,12 +322,24 @@ function HomeInner() {
           ))}
         </Accordion>
         <motion.div
-          className="mt-12 flex justify-center"
+          className="mt-12 flex justify-center gap-4"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          <SlideCtaButton onClick={() => setOnboardingOpen(true)}>Get Started</SlideCtaButton>
+          {isLoggedIn ? (
+            <SlideCtaLink href="/studio">Open Studio</SlideCtaLink>
+          ) : (
+            <>
+              <SlideCtaButton onClick={openSignup}>Get Started</SlideCtaButton>
+              <button
+                onClick={openLogin}
+                className="rounded-full border-2 border-lab-teal px-6 py-3 text-sm font-bold text-lab-teal transition hover:bg-lab-teal hover:text-white"
+              >
+                Log In
+              </button>
+            </>
+          )}
         </motion.div>
       </section>
 

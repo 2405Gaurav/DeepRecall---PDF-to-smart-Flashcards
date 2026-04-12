@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { LogOut, User } from 'lucide-react';
 import { SlideCtaButton } from '@/components/ui/SlideCtaButton';
 import { cn } from '@/lib/utils';
 
@@ -10,30 +11,50 @@ const MotionLink = motion(Link);
 
 const MARKETING_LINKS = [
   { href: '#how-it-works', label: 'How it works' },
-  { href: '/studio', label: 'Studio' },
   { href: '#about-service', label: 'About' },
   { href: '#faq', label: 'FAQ' },
 ] as const;
 
-/** Studio / profile / practice: home-only links removed — you’re already in the app. */
+const LOGGED_IN_LINKS = [
+  { href: '/studio', label: 'Studio' },
+  { href: '/profile', label: 'Profile' },
+] as const;
+
+/** Studio / profile / practice: show minimal nav inside app */
 const STUDIO_APP_LINKS = [{ href: '/profile', label: 'Profile' }] as const;
 
 const navSpring = { type: 'spring' as const, stiffness: 420, damping: 28 };
 
 type NavbarProps = {
-  /** Omit on server-rendered pages; optional on client (studio uses no-op). */
   onGetStarted?: () => void;
+  onLogin?: () => void;
   variant?: 'marketing' | 'studio';
+  isLoggedIn?: boolean;
+  userName?: string | null;
+  onLogout?: () => void;
 };
 
-export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: NavbarProps) {
+export function Navbar({
+  onGetStarted = () => {},
+  onLogin = () => {},
+  variant = 'marketing',
+  isLoggedIn = false,
+  userName,
+  onLogout,
+}: NavbarProps) {
   const pathname = usePathname();
   const isStudioRoute =
     variant === 'studio' ||
     pathname === '/studio' ||
     pathname === '/profile' ||
     (pathname?.startsWith('/studio/') ?? false);
-  const links = isStudioRoute ? STUDIO_APP_LINKS : MARKETING_LINKS;
+
+  // choose which links to show
+  const links = isStudioRoute
+    ? STUDIO_APP_LINKS
+    : isLoggedIn
+      ? [...MARKETING_LINKS, ...LOGGED_IN_LINKS]
+      : MARKETING_LINKS;
 
   return (
     <motion.header
@@ -66,34 +87,67 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
         </nav>
 
         <div className="flex items-center gap-2">
-          {!isStudioRoute && (
-            <MotionLink
-              href="/studio"
-              className="hidden rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition-colors hover:bg-lab-teal hover:text-white md:inline-block"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={navSpring}
-            >
-              Studio
-            </MotionLink>
-          )}
-          {isStudioRoute ? (
-            <MotionLink
-              href="/"
-              className="rounded-lg border-2 border-lab-teal bg-white px-3 py-2 text-sm font-bold leading-none text-lab-teal shadow-sm transition-colors hover:bg-lab-teal hover:text-white"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={navSpring}
-            >
-              Home
-            </MotionLink>
-          ) : (
+          {isLoggedIn ? (
+            /* logged-in state: show name, studio link, logout */
             <>
+              {!isStudioRoute && (
+                <MotionLink
+                  href="/studio"
+                  className="hidden rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition-colors hover:bg-lab-teal hover:text-white md:inline-block"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={navSpring}
+                >
+                  Studio
+                </MotionLink>
+              )}
+              {isStudioRoute && (
+                <MotionLink
+                  href="/"
+                  className="rounded-lg border-2 border-lab-teal bg-white px-3 py-2 text-sm font-bold leading-none text-lab-teal shadow-sm transition-colors hover:bg-lab-teal hover:text-white"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={navSpring}
+                >
+                  Home
+                </MotionLink>
+              )}
+              <div className="hidden items-center gap-1.5 rounded-lg bg-lab-mint/50 px-3 py-1.5 md:flex">
+                <User className="h-3.5 w-3.5 text-lab-teal" />
+                <span className="text-xs font-semibold text-lab-teal-dark truncate max-w-[100px]">
+                  {userName || 'User'}
+                </span>
+              </div>
+              {onLogout && (
+                <motion.button
+                  onClick={onLogout}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-lab-soft transition hover:bg-red-50 hover:text-red-600"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  title="Log out"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Logout</span>
+                </motion.button>
+              )}
+            </>
+          ) : (
+            /* logged-out state: show Login + Get Started */
+            <>
+              <motion.button
+                onClick={onLogin}
+                className="rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition-colors hover:bg-lab-teal hover:text-white"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={navSpring}
+              >
+                Log In
+              </motion.button>
               <SlideCtaButton onClick={onGetStarted} size="compact" className="md:hidden">
                 Start
               </SlideCtaButton>
               <SlideCtaButton onClick={onGetStarted} size="compact" className="hidden md:inline-flex">
-                Get started
+                Sign Up
               </SlideCtaButton>
             </>
           )}

@@ -14,6 +14,7 @@ export async function GET() {
       displayName: user.displayName,
       childName: user.childName,
       grade: user.grade,
+      phone: user.phone ?? null,
       onboarded: !!user.onboardingCompletedAt,
     },
   });
