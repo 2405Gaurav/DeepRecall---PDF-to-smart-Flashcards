@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, UserRound, Loader2, Phone, KeyRound, ArrowLeft, Sparkles } from 'lucide-react';
+import { Rocket, UserRound, Loader2, Eye, EyeOff } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { DEMO_OTP } from '@/lib/demo-otp';
 
 const GRADES = ['KG', '1', '2', '3', '4', '5', '6', '7', '8'] as const;
 
@@ -21,29 +22,35 @@ type AuthModalProps = {
   defaultMode?: 'login' | 'signup';
 };
 
-type AuthStep = 'phone' | 'otp' | 'profile';
+type AuthStep = 'credentials' | 'onboarding';
 
 export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthModalProps) {
+  const router = useRouter();
   const { refresh } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>(defaultMode);
-  const [step, setStep] = useState<AuthStep>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<AuthStep>('credentials');
+
+  // credentials
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+
+  // onboarding profile
   const [displayName, setDisplayName] = useState('');
   const [childName, setChildName] = useState('');
   const [grade, setGrade] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sentOtp, setSentOtp] = useState<string | null>(null); // demo only — shows generated OTP
 
-  // reset state when modal opens/closes or mode changes
+  // track the username after signup so we can greet them in onboarding
+  const [signedUpUsername, setSignedUpUsername] = useState('');
+
   useEffect(() => {
     if (open) {
-      setStep('phone');
-      setOtp('');
+      setStep('credentials');
       setError(null);
       setLoading(false);
-      setSentOtp(null);
     }
   }, [open, mode]);
 
@@ -51,77 +58,52 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
     setMode(defaultMode);
   }, [defaultMode]);
 
-  const cleanedPhone = phone.replace(/\D/g, '');
+  const cleanUsername = username.trim().toLowerCase();
+  const canSubmitCreds = cleanUsername.length >= 3 && password.length >= 6;
 
-  // Send OTP
-  const handleSendOtp = async () => {
-    if (cleanedPhone.length < 10) {
-      setError('Enter a valid 10-digit phone number.');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: cleanedPhone }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-      setSentOtp(data.demoOtp || null);
-      setStep('otp');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    if (otp.length < 4) {
-      setError('Enter the 6-digit OTP.');
-      return;
-    }
+  // signup or login
+  const handleCredentials = async () => {
+    if (!canSubmitCreds) return;
     setLoading(true);
     setError(null);
 
-    // for signup, if profile not filled yet, go to profile step
-    if (mode === 'signup' && step === 'otp') {
-      setStep('profile');
-      setLoading(false);
-      return;
-    }
+    const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
 
-    // login mode — verify and done
     try {
-      const res = await fetch('/api/auth/verify-otp', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          phone: cleanedPhone,
-          otp,
-          mode,
-          displayName: displayName.trim(),
-          childName: childName.trim(),
-          grade,
-        }),
+        body: JSON.stringify({ username: cleanUsername, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Verification failed');
-      await refresh();
-      onOpenChange(false);
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      if (mode === 'signup') {
+        // new user — go to onboarding step
+        setSignedUpUsername(cleanUsername);
+        setStep('onboarding');
+      } else {
+        // login — refresh auth, close modal, redirect
+        await refresh();
+        onOpenChange(false);
+        if (data.user?.onboarded) {
+          router.push('/studio');
+        } else {
+          // returning user who never finished onboarding
+          setSignedUpUsername(cleanUsername);
+          setStep('onboarding');
+        }
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to verify');
+      setError(e instanceof Error ? e.message : 'Failed');
     } finally {
       setLoading(false);
     }
   };
 
-  // Signup final submit
-  const handleSignupSubmit = async () => {
+  // complete onboarding
+  const handleOnboarding = async () => {
     if (displayName.trim().length < 2) {
       setError('Name must be at least 2 characters.');
       return;
@@ -129,33 +111,29 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/auth/verify-otp', {
+      const res = await fetch('/api/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          phone: cleanedPhone,
-          otp,
-          mode: 'signup',
           displayName: displayName.trim(),
-          childName: childName.trim(),
-          grade,
+          childName: childName.trim() || undefined,
+          grade: grade || undefined,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      if (!res.ok) throw new Error(data.error || 'Failed to save profile');
       await refresh();
       onOpenChange(false);
+      router.push('/studio');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Signup failed');
+      setError(e instanceof Error ? e.message : 'Failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = (v: boolean) => {
-    onOpenChange(v);
-  };
+  const handleClose = (v: boolean) => onOpenChange(v);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -166,6 +144,11 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
         <DialogTitle className="sr-only">
           {mode === 'login' ? 'Log in to Cuemath' : 'Sign up for Cuemath'}
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          {mode === 'login'
+            ? 'Enter your username and password to access your account.'
+            : 'Create a new account with a username and password.'}
+        </DialogDescription>
 
         {/* Header */}
         <div className="relative bg-lab-teal px-4 pt-3 pb-2 text-white">
@@ -186,40 +169,42 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
           </div>
         </div>
 
-        {/* Mode tabs */}
-        <div className="flex border-b border-lab-line">
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setStep('phone'); setError(null); }}
-            className={cn(
-              'flex-1 py-3 text-sm font-bold transition',
-              mode === 'login'
-                ? 'border-b-2 border-lab-teal text-lab-teal-dark bg-lab-mint/30'
-                : 'text-lab-soft hover:text-lab-teal-dark'
-            )}
-          >
-            🔑 Log In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('signup'); setStep('phone'); setError(null); }}
-            className={cn(
-              'flex-1 py-3 text-sm font-bold transition',
-              mode === 'signup'
-                ? 'border-b-2 border-lab-teal text-lab-teal-dark bg-lab-mint/30'
-                : 'text-lab-soft hover:text-lab-teal-dark'
-            )}
-          >
-            🚀 Sign Up
-          </button>
-        </div>
+        {/* Mode tabs — only show on credentials step */}
+        {step === 'credentials' && (
+          <div className="flex border-b border-lab-line">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(null); }}
+              className={cn(
+                'flex-1 py-3 text-sm font-bold transition',
+                mode === 'login'
+                  ? 'border-b-2 border-lab-teal text-lab-teal-dark bg-lab-mint/30'
+                  : 'text-lab-soft hover:text-lab-teal-dark'
+              )}
+            >
+              🔑 Log In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('signup'); setError(null); }}
+              className={cn(
+                'flex-1 py-3 text-sm font-bold transition',
+                mode === 'signup'
+                  ? 'border-b-2 border-lab-teal text-lab-teal-dark bg-lab-mint/30'
+                  : 'text-lab-soft hover:text-lab-teal-dark'
+              )}
+            >
+              🚀 Sign Up
+            </button>
+          </div>
+        )}
 
         <div className="bg-white px-6 pb-8 pt-6">
           <AnimatePresence mode="wait">
-            {/* ── Step 1: Phone ── */}
-            {step === 'phone' && (
+            {/* ── Credentials Step ── */}
+            {step === 'credentials' && (
               <motion.div
-                key="phone"
+                key="credentials"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -230,143 +215,85 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
                   animate={{ y: [0, -5, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  📱
+                  {mode === 'login' ? '👋' : '✨'}
                 </motion.div>
                 <h2 className="text-center font-display text-xl font-semibold text-lab-teal-dark">
-                  {mode === 'login' ? 'Welcome back! 👋' : 'Let\'s get started! ✨'}
+                  {mode === 'login' ? 'Welcome back!' : "Let's get started!"}
                 </h2>
                 <p className="mt-2 text-center text-sm text-lab-soft">
-                  Enter your mobile number to {mode === 'login' ? 'log in' : 'create an account'}
+                  {mode === 'login'
+                    ? 'Enter your username and password to continue'
+                    : 'Choose a username and password to create your account'}
                 </p>
 
-                <div className="mt-6 space-y-2">
-                  <label className="text-xs font-semibold text-lab-soft">Mobile number</label>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-12 items-center rounded-lg border-2 border-neutral-300 bg-neutral-50 px-3 text-sm font-medium text-lab-soft">
-                      +91
-                    </span>
+                <div className="mt-6 space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-lab-soft">Username</label>
                     <Input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="9876543210"
-                      inputMode="tel"
-                      maxLength={15}
-                      className="h-12 flex-1 rounded-lg border-2 border-neutral-800 bg-white text-base"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20))}
+                      placeholder="e.g. alex_2024"
+                      className="h-12 rounded-lg border-2 border-neutral-800 bg-white text-base"
                       autoFocus
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                      autoComplete="username"
                     />
+                    {mode === 'signup' && username.length > 0 && username.length < 3 && (
+                      <p className="text-[11px] text-amber-600">At least 3 characters</p>
+                    )}
                   </div>
-                  <p className="flex items-center gap-1 text-[11px] text-lab-soft">
-                    <Sparkles className="h-3 w-3 text-lab-amber" />
-                    Demo OTP: <code className="rounded bg-lab-mint px-1.5 py-0.5 font-mono font-bold text-lab-teal">{DEMO_OTP}</code> works with any number
-                  </p>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-lab-soft">Password</label>
+                    <div className="relative">
+                      <Input
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        type={showPwd ? 'text' : 'password'}
+                        placeholder={mode === 'signup' ? 'At least 6 characters' : '••••••'}
+                        className="h-12 rounded-lg border-2 border-neutral-800 bg-white pr-10 text-base"
+                        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                        onKeyDown={(e) => e.key === 'Enter' && canSubmitCreds && handleCredentials()}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPwd(!showPwd)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-lab-soft hover:text-lab-ink"
+                        tabIndex={-1}
+                      >
+                        {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <button
                   type="button"
-                  disabled={cleanedPhone.length < 10 || loading}
-                  onClick={handleSendOtp}
+                  disabled={!canSubmitCreds || loading}
+                  onClick={handleCredentials}
                   className={cn(
                     'mt-6 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition',
-                    cleanedPhone.length >= 10 && !loading
+                    canSubmitCreds && !loading
                       ? 'bg-lab-amber text-lab-ink shadow hover:brightness-95'
                       : 'cursor-not-allowed bg-neutral-300 text-white'
                   )}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Sending…
-                    </>
-                  ) : (
-                    <>
-                      <Phone className="h-4 w-4" /> Send OTP
-                    </>
-                  )}
-                </button>
-              </motion.div>
-            )}
-
-            {/* ── Step 2: OTP Verification ── */}
-            {step === 'otp' && (
-              <motion.div
-                key="otp"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <button
-                  type="button"
-                  onClick={() => { setStep('phone'); setError(null); }}
-                  className="mb-2 flex items-center gap-1 text-sm font-semibold text-lab-teal hover:underline"
-                >
-                  <ArrowLeft className="h-3 w-3" /> Change number
-                </button>
-
-                <motion.div
-                  className="mx-auto mb-3 w-fit text-3xl"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  🔐
-                </motion.div>
-                <h2 className="text-center font-display text-xl font-semibold text-lab-teal-dark">
-                  Enter OTP
-                </h2>
-                <p className="mt-1 text-center text-sm text-lab-soft">
-                  Sent to <strong>{phone}</strong>
-                </p>
-
-                {sentOtp && (
-                  <div className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-lab-mint bg-lab-mint/30 py-2 text-sm">
-                    <KeyRound className="h-4 w-4 text-lab-teal" />
-                    <span className="text-lab-soft">Demo OTP:</span>
-                    <code className="font-mono font-bold text-lab-teal">{sentOtp}</code>
-                  </div>
-                )}
-
-                <div className="mt-5 space-y-2">
-                  <label className="text-xs font-semibold text-lab-soft">6-digit OTP</label>
-                  <Input
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="123456"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className="h-12 rounded-lg border-2 border-neutral-800 bg-white text-center text-xl font-mono tracking-[0.3em]"
-                    autoFocus
-                    onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  disabled={otp.length < 4 || loading}
-                  onClick={handleVerifyOtp}
-                  className={cn(
-                    'mt-6 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition',
-                    otp.length >= 4 && !loading
-                      ? 'bg-lab-amber text-lab-ink shadow hover:brightness-95'
-                      : 'cursor-not-allowed bg-neutral-300 text-white'
-                  )}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
+                      <Loader2 className="h-4 w-4 animate-spin" /> {mode === 'signup' ? 'Creating…' : 'Logging in…'}
                     </>
                   ) : mode === 'signup' ? (
-                    'Verify & Continue →'
+                    '🚀 Create Account'
                   ) : (
-                    '✅ Verify & Log In'
+                    '✅ Log In'
                   )}
                 </button>
               </motion.div>
             )}
 
-            {/* ── Step 3: Signup Profile ── */}
-            {step === 'profile' && mode === 'signup' && (
+            {/* ── Onboarding Step (after signup) ── */}
+            {step === 'onboarding' && (
               <motion.div
-                key="profile"
+                key="onboarding"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -381,8 +308,11 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
                   🎓
                 </motion.div>
                 <h2 className="text-center font-display text-xl font-semibold text-lab-teal-dark">
-                  Tell us about yourself
+                  Hey {signedUpUsername}, let&apos;s set up your profile
                 </h2>
+                <p className="mt-1 text-center text-sm text-lab-soft">
+                  This helps us personalize your learning experience
+                </p>
 
                 <div className="mt-5 space-y-4">
                   <div className="space-y-1">
@@ -428,34 +358,25 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
                   </div>
                 </div>
 
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setStep('otp')}
-                    className="rounded-full border-2 border-neutral-300 px-5 py-3 text-sm font-semibold text-lab-teal-dark hover:bg-neutral-50"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    disabled={displayName.trim().length < 2 || loading}
-                    onClick={handleSignupSubmit}
-                    className={cn(
-                      'flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition',
-                      displayName.trim().length >= 2 && !loading
-                        ? 'bg-lab-amber text-lab-ink shadow hover:brightness-95'
-                        : 'cursor-not-allowed bg-neutral-300 text-white'
-                    )}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Creating…
-                      </>
-                    ) : (
-                      '🚀 Create Account'
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  disabled={displayName.trim().length < 2 || loading}
+                  onClick={handleOnboarding}
+                  className={cn(
+                    'mt-6 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition',
+                    displayName.trim().length >= 2 && !loading
+                      ? 'bg-lab-amber text-lab-ink shadow hover:brightness-95'
+                      : 'cursor-not-allowed bg-neutral-300 text-white'
+                  )}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                    </>
+                  ) : (
+                    '🎉 Start Learning'
+                  )}
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

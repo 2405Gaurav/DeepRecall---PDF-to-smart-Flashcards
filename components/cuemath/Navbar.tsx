@@ -7,7 +7,7 @@ import { LogOut, User } from 'lucide-react';
 import { SlideCtaButton } from '@/components/ui/SlideCtaButton';
 import { cn } from '@/lib/utils';
 
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 const MARKETING_LINKS = [
   { href: '#how-it-works', label: 'How it works' },
@@ -112,12 +112,12 @@ export function Navbar({
                   Home
                 </MotionLink>
               )}
-              <div className="hidden items-center gap-1.5 rounded-lg bg-lab-mint/50 px-3 py-1.5 md:flex">
+              <Link href="/profile" className="hidden items-center gap-1.5 rounded-lg bg-lab-mint/50 px-3 py-1.5 md:flex hover:bg-lab-mint transition">
                 <User className="h-3.5 w-3.5 text-lab-teal" />
                 <span className="text-xs font-semibold text-lab-teal-dark truncate max-w-[100px]">
-                  {userName || 'User'}
+                  @{userName || 'user'}
                 </span>
-              </div>
+              </Link>
               {onLogout && (
                 <motion.button
                   onClick={onLogout}

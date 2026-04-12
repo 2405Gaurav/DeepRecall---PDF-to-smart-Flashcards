@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { CUE_SESSION_COOKIE } from '@/lib/session-cookie';
+import { AUTH_COOKIE } from '@/lib/jwt';
 
 export const runtime = 'nodejs';
 
-/** POST /api/auth/logout — clears the session cookie */
+/** POST /api/auth/logout — clears the JWT session cookie */
 export async function POST() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(CUE_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
+  res.cookies.set(AUTH_COOKIE, '', { maxAge: 0, path: '/' });
   return res;
 }

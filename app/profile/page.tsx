@@ -19,6 +19,7 @@ export default async function ProfilePage() {
       displayName={user.displayName ?? ''}
       childName={user.childName}
       grade={user.grade}
+      username={user.username ?? undefined}
     />
   );
 }

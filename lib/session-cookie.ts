@@ -1,15 +1,20 @@
 import type { NextRequest } from 'next/server';
+import { AUTH_COOKIE, verifyToken } from '@/lib/jwt';
 
-export const CUE_SESSION_COOKIE = 'cue_session_uid';
+// kept for backward compat — old cookie name
+export const CUE_SESSION_COOKIE = AUTH_COOKIE;
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function parseSessionUserId(value: string | undefined): string | null {
-  if (!value || !UUID_RE.test(value)) return null;
-  return value;
+/** Read session user ID from the JWT cookie on a NextRequest (used in API routes). */
+export function readSessionUserId(request: NextRequest): string | null {
+  const token = request.cookies.get(AUTH_COOKIE)?.value;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  return payload?.userId ?? null;
 }
 
-export function readSessionUserId(request: NextRequest): string | null {
-  return parseSessionUserId(request.cookies.get(CUE_SESSION_COOKIE)?.value);
+/** @deprecated — use readSessionUserId instead. Kept for any legacy callers. */
+export function parseSessionUserId(value: string | undefined): string | null {
+  if (!value) return null;
+  const payload = verifyToken(value);
+  return payload?.userId ?? null;
 }

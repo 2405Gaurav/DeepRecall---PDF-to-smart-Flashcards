@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { CUE_SESSION_COOKIE, parseSessionUserId } from '@/lib/session-cookie';
+import { AUTH_COOKIE, verifyToken } from '@/lib/jwt';
 
 export type SessionUser = {
   id: string;
+  username: string | null;
   displayName: string | null;
   childName: string | null;
   grade: string | null;
@@ -11,15 +12,20 @@ export type SessionUser = {
   onboardingCompletedAt: Date | null;
 };
 
+/** Read the JWT from the cookie, verify it, and fetch the user from the DB. */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
-  const id = parseSessionUserId(store.get(CUE_SESSION_COOKIE)?.value);
-  if (!id) return null;
+  const token = store.get(AUTH_COOKIE)?.value;
+  if (!token) return null;
+
+  const payload = verifyToken(token);
+  if (!payload) return null;
 
   const user = await prisma.user.findUnique({
-    where: { id },
+    where: { id: payload.userId },
     select: {
       id: true,
+      username: true,
       displayName: true,
       childName: true,
       grade: true,

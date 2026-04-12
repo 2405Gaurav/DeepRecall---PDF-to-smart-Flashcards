@@ -23,6 +23,7 @@ type ProfileClientProps = {
   displayName: string;
   childName: string | null;
   grade: string | null;
+  username?: string;
 };
 
 const fade = {
@@ -30,7 +31,7 @@ const fade = {
   show: { opacity: 1, y: 0 },
 };
 
-export function ProfileClient({ displayName, childName, grade }: ProfileClientProps) {
+export function ProfileClient({ displayName, childName, grade, username }: ProfileClientProps) {
   const [analytics, setAnalytics] = useState<UserAnalyticsPayload | null>(null);
   const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,8 +88,9 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
                 Your profile
               </h1>
               <p className="mt-1 text-base text-lab-soft">
-                Hi, <span className="font-semibold text-lab-ink">{firstName}</span> — here&apos;s who&apos;s learning
-                and how it&apos;s going.
+                Hi, <span className="font-semibold text-lab-ink">{firstName}</span>
+                {username && <span className="ml-1 text-sm text-lab-teal">@{username}</span>}
+                {' — here\'s who\'s learning and how it\'s going.'}
               </p>
               <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm text-lab-soft">
                 {childName && (
@@ -197,7 +199,13 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
 
           {analytics && (
             <>
-              <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {/* big mastered number */}
+              <div className="mt-8 mb-6 text-center rounded-2xl border-2 border-emerald-200 bg-emerald-50/50 py-6">
+                <p className="text-5xl font-black text-emerald-600">{analytics.cardsMastered}</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-700">Total Cards Mastered</p>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="Reviews logged" value={analytics.totalReviews} />
                 <Stat label="Your decks" value={analytics.decksOwned} />
                 <Stat label="On-track taps" value={analytics.easyTotal} accent="text-emerald-600" />
@@ -206,8 +214,8 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
 
               <div className="mt-8">
                 <p className="text-sm font-semibold text-zinc-800">Last 7 days</p>
-                <div className="mt-3 h-52 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="mt-3 h-52 w-full" style={{ minWidth: 200, minHeight: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
                     <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#a8cfc7" />
                       <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
@@ -226,6 +234,32 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
                 </div>
               </div>
 
+              {/* struggle cards — top hardest */}
+              <div className="mt-8">
+                <h3 className="flex items-center gap-2 text-base font-bold text-lab-ink">
+                  🧗 Struggle cards
+                </h3>
+                <p className="mt-1 text-xs text-lab-soft">Your hardest cards across all decks — the algorithm will show these more often.</p>
+                <ul className="mt-3 space-y-2">
+                  {analytics.topCards.filter(c => c.hardCount >= 2).length === 0 ? (
+                    <li className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm">
+                      <span className="text-xl">💪</span>
+                      <span className="text-lab-soft">No struggle cards. You are making this look easy.</span>
+                    </li>
+                  ) : (
+                    analytics.topCards.filter(c => c.hardCount >= 2).slice(0, 5).map((c) => (
+                      <li key={c.id} className="rounded-xl border border-orange-100 bg-orange-50/50 px-4 py-3 text-sm leading-snug">
+                        <span className="font-medium text-lab-ink line-clamp-2">{c.question}</span>
+                        <span className="mt-1 block text-xs text-lab-soft">
+                          {c.deckTitle} · <strong className="text-orange-600">{c.hardCount}</strong> times hard
+                        </span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+
+              {/* best cards */}
               <div className="mt-8">
                 <h3 className="flex items-center gap-2 text-base font-bold text-lab-ink">
                   <BookOpen className="h-5 w-5 text-lab-teal" aria-hidden />

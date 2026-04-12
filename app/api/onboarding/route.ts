@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { CUE_SESSION_COOKIE } from '@/lib/session-cookie';
+import { readSessionUserId } from '@/lib/session-cookie';
 
 export const runtime = 'nodejs';
 
-const MAX_AGE = 60 * 60 * 24 * 400;
-
 const bodySchema = z.object({
-  grade: z.string().min(1).max(8),
   displayName: z.string().trim().min(2).max(120),
-  childName: z.string().trim().min(2).max(120),
-  phone: z
-    .string()
-    .trim()
-    .transform((s) => s.replace(/\D/g, ''))
-    .refine((d) => d.length >= 10, 'Enter a valid phone number (at least 10 digits).'),
+  childName: z.string().trim().max(120).optional(),
+  grade: z.string().min(1).max(8).optional(),
 });
 
+/**
+ * POST /api/onboarding
+ * Requires an authenticated user (JWT cookie set from signup/login).
+ * Updates their profile details and marks onboarding complete.
+ */
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: 'Database not configured.' }, { status: 500 });
+    const userId = readSessionUserId(request);
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated. Please sign up or log in first.' }, { status: 401 });
     }
 
     const json = await request.json();
@@ -31,45 +30,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid input', details: msg }, { status: 400 });
     }
 
-    const { grade, displayName, childName, phone } = parsed.data;
+    const { displayName, childName, grade } = parsed.data;
     const now = new Date();
 
-    const user = await prisma.user.upsert({
-      where: { phone },
-      create: {
-        phone,
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
         displayName,
-        childName,
-        grade,
-        onboardingCompletedAt: now,
-      },
-      update: {
-        displayName,
-        childName,
-        grade,
+        childName: childName || null,
+        grade: grade || null,
         onboardingCompletedAt: now,
       },
     });
 
-    const res = NextResponse.json({ ok: true, userId: user.id });
-    res.cookies.set(CUE_SESSION_COOKIE, user.id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: MAX_AGE,
-      path: '/',
-    });
-    return res;
+    return NextResponse.json({ ok: true, userId: user.id });
   } catch (error) {
     console.error('Onboarding error:', error);
     const message = error instanceof Error ? error.message : 'Failed to save';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-/** Optional: clear session (e.g. sign out later) */
-export async function DELETE() {
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(CUE_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
-  return res;
 }

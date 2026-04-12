@@ -14,6 +14,7 @@ import {
   EyeOff,
   Play,
   ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 import type { DeckCardRow, DeckDetailStats } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,9 @@ function mapRow(c: Record<string, unknown>): DeckCardRow {
     answer: String(c.answer),
     masteryLevel: (c.masteryLevel as DeckCardRow['masteryLevel']) ?? 'NEW',
     cardType: c.cardType != null ? String(c.cardType) : undefined,
+    nextReview: c.nextReview ? (typeof c.nextReview === 'string' ? c.nextReview : new Date(c.nextReview as Date).toISOString()) : undefined,
+    easyCount: typeof c.easyCount === 'number' ? c.easyCount : 0,
+    hardCount: typeof c.hardCount === 'number' ? c.hardCount : 0,
   };
 }
 
@@ -131,6 +135,22 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       if (res.ok) router.push('/studio');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleResetCard = async (cardId: string) => {
+    if (!confirm('Reset this card to NEW? It will appear as unreviewed.')) return;
+    try {
+      await fetch(`/api/flashcard/${cardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ outcome: 'LEARNING' }),
+      });
+      // refresh to show updated state
+      await load();
+    } catch (e) {
+      console.warn('Reset failed:', e);
     }
   };
 
@@ -285,44 +305,67 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
           Showing {visibleCards.length} of {cards.length}
         </p>
         <ul className="mt-3 space-y-3">
-          {visibleCards.map((c, i) => (
+          {visibleCards.map((c, i) => {
+            const masteryBadge = {
+              NEW: { label: 'New', cls: 'bg-neutral-100 text-neutral-600 border-neutral-200' },
+              LEARNING: { label: 'Learning', cls: 'bg-orange-50 text-orange-700 border-orange-200' },
+              FAMILIAR: { label: 'Familiar', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+              MASTERED: { label: 'Mastered', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+            }[c.masteryLevel] ?? { label: 'New', cls: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
+
+            const nextDate = c.nextReview
+              ? new Date(c.nextReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+              : '—';
+
+            return (
             <motion.li
               key={c.id}
               layout
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="grid gap-2 sm:grid-cols-2"
             >
-              <Card className="relative rotate-[-0.5deg] border-lab-line/80 bg-white/95 p-4 text-sm shadow-sm transition-shadow hover:shadow-md">
-                <span className="text-[10px] font-bold text-lab-teal">
-                  {i + 1}/{cards.length}
-                </span>
-                <p className="mt-1 leading-snug text-lab-ink">{c.question}</p>
-              </Card>
-              <Card
-                className={cn(
-                  'relative border-lab-line/80 bg-white/95 p-4 text-sm shadow-sm transition-shadow hover:shadow-md',
-                  !showAnswers && 'select-none'
-                )}
-              >
-                <span className="text-[10px] font-bold uppercase tracking-wide text-lab-soft">Answer</span>
-                <p
-                  className={cn(
-                    'mt-1 leading-snug text-lab-ink/90 transition',
-                    !showAnswers && 'blur-md'
-                  )}
-                >
-                  {c.answer}
-                </p>
-                {!showAnswers && (
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/35">
-                    <EyeOff className="h-8 w-8 text-lab-line" />
+              <Card className="border-lab-line/80 bg-white/95 p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold text-lab-teal">{i + 1}/{cards.length}</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${masteryBadge.cls}`}>{masteryBadge.label}</span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2 text-[10px] text-lab-soft shrink-0">
+                    <span title="Next review">📅 {nextDate}</span>
+                    <span className="text-emerald-600">{c.easyCount ?? 0}✓</span>
+                    <span className="text-orange-600">{c.hardCount ?? 0}✗</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); void handleResetCard(c.id); }}
+                      className="rounded p-0.5 hover:bg-red-50 hover:text-red-600 transition"
+                      title="Reset to NEW"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-lab-teal">Question</span>
+                    <p className="mt-0.5 text-sm leading-snug text-lab-ink">{c.question}</p>
+                  </div>
+                  <div className={cn(!showAnswers && 'relative select-none')}>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-lab-soft">Answer</span>
+                    <p className={cn('mt-0.5 text-sm leading-snug text-lab-ink/90 transition', !showAnswers && 'blur-md')}>
+                      {c.answer}
+                    </p>
+                    {!showAnswers && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/35">
+                        <EyeOff className="h-6 w-6 text-lab-line" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </Card>
             </motion.li>
-          ))}
+            );
+          })}
         </ul>
         {canShowMore && (
           <div className="mt-5 flex justify-center">

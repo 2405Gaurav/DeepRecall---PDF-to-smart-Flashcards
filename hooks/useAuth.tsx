@@ -3,18 +3,16 @@
 import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
 
 /**
- * useAuth — global auth hook. Call this anywhere in the app to get the
- * current user, check loading state, and trigger login/logout/refresh.
- *
- * Data is fetched from /api/me/session on mount and cached in context.
+ * useAuth — global auth hook used throughout the app.
+ * Data fetched from /api/me/session on mount and cached in context.
  */
 
 export type AuthUser = {
   id: string;
+  username: string | null;
   displayName: string | null;
   childName: string | null;
   grade: string | null;
-  phone: string | null;
   onboarded: boolean;
 };
 
@@ -56,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch {
-      // even if the call fails, clear local state
+      // clear local state even if call fails
     }
     setUser(null);
   }, []);

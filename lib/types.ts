@@ -50,4 +50,7 @@ export interface DeckCardRow {
   answer: string;
   masteryLevel: MasteryLevel;
   cardType?: string;
+  nextReview?: string;
+  easyCount?: number;
+  hardCount?: number;
 }

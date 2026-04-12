@@ -16,11 +16,12 @@ import { motion } from 'framer-motion';
 const EMOJIS = ['📘', '🧠', '⭐', '✨', '🎯'];
 
 const MESSAGES = [
-  'Getting your cards ready…',
-  'Brain is warming up…',
-  'Almost there, stay tuned!',
-  'Loading something awesome…',
-  'Preparing the magic…',
+  'Did you know? Spaced repetition can cut study time by 50%.',
+  'The Ebbinghaus forgetting curve: you forget 70% within 24 hours without review.',
+  'Active recall is 2x more effective than re-reading.',
+  'Your cards are being prepared by an AI teacher right now.',
+  'Testing yourself beats re-reading every time.',
+  'Sleeping after studying helps memories consolidate.',
 ];
 
 type LoaderSize = 'sm' | 'md' | 'lg';
@@ -216,9 +217,11 @@ export function CueMathLoader({ message, size = 'md', className = '', fullScreen
  */
 const UPLOAD_TIPS = [
   { emoji: '📖', tip: 'Reading your PDF page by page…' },
-  { emoji: '🤖', tip: 'AI is creating smart flashcards…' },
-  { emoji: '🧠', tip: 'Building questions that make you think…' },
-  { emoji: '✨', tip: 'Adding the finishing touches…' },
+  { emoji: '🤖', tip: 'Your cards are being written by an AI teacher right now.' },
+  { emoji: '🧠', tip: 'Did you know? Spaced repetition can cut study time by 50%.' },
+  { emoji: '📊', tip: 'The Ebbinghaus forgetting curve shows you forget 70% within 24 hours without review.' },
+  { emoji: '⚡', tip: 'Active recall is 2x more effective than re-reading.' },
+  { emoji: '✨', tip: 'Great flashcards test understanding, not just memory.' },
   { emoji: '💾', tip: 'Saving your deck…' },
 ];
 

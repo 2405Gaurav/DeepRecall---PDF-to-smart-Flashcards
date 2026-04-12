@@ -10,6 +10,8 @@ model User {
   id                    String      @id @default(uuid()) @db.Uuid
   email                 String?     @unique
   phone                 String?     @unique
+  username              String?     @unique
+  passwordHash          String?     @map("password_hash")
   displayName           String?     @map("display_name")
   childName             String?     @map("child_name")
   grade                 String?

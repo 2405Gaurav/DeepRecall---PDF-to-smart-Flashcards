@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Trophy, Handshake, Target, Sparkles, LogOut, User, BookOpen } from 'lucide-react';
+import { Trophy, Handshake, Target, Sparkles, User } from 'lucide-react';
 import { Navbar } from '@/components/cuemath/Navbar';
 import { CueFlashcardSection } from '@/components/cuemath/CueFlashcardSection';
 import { Footer } from '@/components/cuemath/Footer';
@@ -14,7 +14,6 @@ import { StreakBanner } from '@/components/ui/BadgeDisplay';
 import type { UserStreakPayload } from '@/lib/streaks';
 import { SlideCtaButton, SlideCtaLink } from '@/components/ui/SlideCtaButton';
 import { useAuth } from '@/hooks/useAuth';
-import { DEMO_OTP } from '@/lib/demo-otp';
 import {
   Accordion,
   AccordionContent,
@@ -32,8 +31,8 @@ const FAQ = [
     a: 'Sign up or log in, then open Your studio. Uploads are tied to your account so decks are always accessible.',
   },
   {
-    q: 'How does login/OTP work?',
-    a: `Enter any 10-digit phone number and verify with an OTP. For this demo, the universal OTP "${DEMO_OTP}" works with any number. In production, a real SMS gateway would be integrated.`,
+    q: 'How do I sign up or log in?',
+    a: 'Choose a username and password — that\'s it! After signing up, you\'ll fill in your name and grade so we can personalize your experience. Returning users just log in and go straight to the studio.',
   },
   {
     q: 'Which PDFs work best?',
@@ -88,7 +87,7 @@ function HomeInner() {
         onGetStarted={openSignup}
         onLogin={openLogin}
         isLoggedIn={isLoggedIn}
-        userName={user?.displayName || null}
+        userName={user?.displayName || user?.username || null}
         onLogout={logout}
       />
       <AuthModal
@@ -176,22 +175,6 @@ function HomeInner() {
             </>
           )}
         </motion.div>
-
-        {/* demo OTP hint */}
-        {!isLoggedIn && (
-          <motion.div
-            className="mt-5 flex justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex items-center gap-2 rounded-full border border-lab-mint bg-lab-mint/40 px-4 py-2 text-xs text-lab-soft">
-              <Sparkles className="h-3.5 w-3.5 text-lab-amber" />
-              <span>Demo mode: use any 10-digit number + OTP</span>
-              <code className="rounded bg-white px-2 py-0.5 font-mono font-bold text-lab-teal shadow-sm">{DEMO_OTP}</code>
-            </div>
-          </motion.div>
-        )}
       </section>
 
       {/* streak banner for logged-in users */}

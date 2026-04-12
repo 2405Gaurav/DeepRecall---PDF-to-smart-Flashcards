@@ -65,9 +65,13 @@ export async function PATCH(
     }
 
     const ownerMatch = Boolean(sessionUserId && card.deck.userId === sessionUserId);
+
+    // pass easyCount + hardCount for personalized difficulty memory
     const plan = planReviewUpdate(reviewOutcome, {
       interval: card.interval,
       masteryLevel: card.masteryLevel,
+      easyCount: card.easyCount,
+      hardCount: card.hardCount,
     });
     const now = new Date();
 
@@ -100,7 +104,7 @@ export async function PATCH(
       });
     });
 
-    // update streaks & award badges outside the transaction (non-blocking for card save)
+    // update streaks & award badges outside transaction (non-blocking)
     let streakInfo = null;
     if (ownerMatch && sessionUserId) {
       try {
@@ -110,10 +114,33 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ flashcard, streak: streakInfo });
+    // return session summary data alongside the card
+    return NextResponse.json({
+      flashcard,
+      streak: streakInfo,
+      sessionSummary: {
+        updatedMasteryLevel: plan.updatedMasteryLevel,
+        previousMasteryLevel: plan.previousMasteryLevel,
+        nextReviewDate: plan.nextReviewDate,
+        intervalDays: plan.intervalDays,
+        isStruggleCard: plan.isStruggleCard,
+        leveledUp: plan.previousMasteryLevel !== plan.updatedMasteryLevel &&
+          masteryRank(plan.updatedMasteryLevel) > masteryRank(plan.previousMasteryLevel),
+      },
+    });
   } catch (error) {
     console.error('Update flashcard error:', error);
     const message = error instanceof Error ? error.message : 'Failed to update flashcard';
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+function masteryRank(level: string): number {
+  switch (level) {
+    case 'NEW': return 0;
+    case 'LEARNING': return 1;
+    case 'FAMILIAR': return 2;
+    case 'MASTERED': return 3;
+    default: return 0;
   }
 }

@@ -1,19 +1,22 @@
 /**
- * Spaced repetition & mastery — aligned with long-term retention over cramming.
+ * Spaced repetition & mastery — personalized SM-2-inspired system.
  *
- * Policy (SM-2-inspired, simplified):
- * - Struggle (LEARNING / HARD) → short interval (1 day), card stays in the "learning" bucket.
- * - Partial success (FAMILIAR) → moderate growth (~1.5× previous days, floor 3).
- * - Success (EASY / MASTERED) → expand interval (≈2×–2.5×, floors for early mastery), capped so
- *   well-known cards fade from the queue without disappearing forever (max gap).
- * - Intervals are stored as whole days; `nextReview` is advanced from "now" at review time.
- *
- * See also: `sortFlashcardsForReviewQueue` — due cards first, most overdue first, then upcoming.
+ * KEY FEATURES:
+ * 1. Difficulty memory: cards with hardCount >= 3 are "struggle cards" (halved interval growth)
+ * 2. Easy acceleration: cards with easyCount >= 4 and hardCount === 0 grow intervals 1.5x faster
+ * 3. Four mastery levels with clear thresholds:
+ *    - NEW: never reviewed
+ *    - LEARNING: reviewed but interval < 4 days
+ *    - FAMILIAR: interval 4–14 days
+ *    - MASTERED: interval > 14 days AND last rating was not hard
+ * 4. Review queue ordering: overdue first → LEARNING due → FAMILIAR due → NEW (max 10 new/session)
+ * 5. Session capped at 20 cards to prevent overwhelming
  */
 import { ML, RO, type MasteryLevelLiteral, type ReviewOutcomeLiteral } from '@/lib/db-enums';
 
 export const MAX_INTERVAL_DAYS = 365;
-export const MIN_MASTER_INTERVAL_DAYS = 7;
+export const MAX_SESSION_CARDS = 20;
+export const MAX_NEW_PER_SESSION = 10;
 
 export function addUtcDays(base: Date, days: number): Date {
   const d = new Date(base.getTime());
@@ -21,133 +24,156 @@ export function addUtcDays(base: Date, days: number): Date {
   return d;
 }
 
-function clampIntervalDays(days: number): number {
+function clampInterval(days: number): number {
   return Math.min(MAX_INTERVAL_DAYS, Math.max(1, Math.round(days)));
 }
 
-function growMasteredInterval(previous: number): number {
-  const grown = Math.max(MIN_MASTER_INTERVAL_DAYS, Math.round(previous * 2.45));
-  return clampIntervalDays(grown);
+/** Determine mastery level from interval + outcome */
+function computeMasteryLevel(interval: number, wasHard: boolean): MasteryLevelLiteral {
+  if (wasHard) return interval < 4 ? ML.LEARNING : ML.FAMILIAR;
+  if (interval > 14) return ML.MASTERED;
+  if (interval >= 4) return ML.FAMILIAR;
+  return ML.LEARNING;
 }
 
-export function planReviewUpdate(
-  outcome: ReviewOutcomeLiteral,
-  card: { interval: number; masteryLevel: string }
-): {
+export interface ReviewPlan {
   masteryLevel: MasteryLevelLiteral;
   interval: number;
   nextReview: Date;
   difficulty: 'EASY' | 'HARD' | 'NONE';
   easyInc: boolean;
   hardInc: boolean;
-} {
+  // session summary fields
+  isStruggleCard: boolean;
+  previousMasteryLevel: string;
+  updatedMasteryLevel: string;
+  intervalDays: number;
+  nextReviewDate: string;
+}
+
+export function planReviewUpdate(
+  outcome: ReviewOutcomeLiteral,
+  card: {
+    interval: number;
+    masteryLevel: string;
+    easyCount: number;
+    hardCount: number;
+  }
+): ReviewPlan {
   const now = new Date();
+  const isStruggle = card.hardCount >= 3;
+  const isEasyCard = card.easyCount >= 4 && card.hardCount === 0;
+  const previousMasteryLevel = card.masteryLevel;
+
+  let interval: number;
+  let wasHard = false;
 
   switch (outcome) {
     case RO.LEARNING:
-      return {
-        masteryLevel: ML.LEARNING,
-        interval: 1,
-        nextReview: addUtcDays(now, 1),
-        difficulty: 'HARD',
-        easyInc: false,
-        hardInc: true,
-      };
-    case RO.HARD:
-      return {
-        masteryLevel: ML.LEARNING,
-        interval: 1,
-        nextReview: addUtcDays(now, 1),
-        difficulty: 'HARD',
-        easyInc: false,
-        hardInc: true,
-      };
+    case RO.HARD: {
+      // hard/struggle: come back in 1 day, stay in LEARNING
+      interval = 1;
+      wasHard = true;
+      break;
+    }
     case RO.FAMILIAR: {
-      const days = Math.max(3, Math.ceil(card.interval * 1.5));
-      return {
-        masteryLevel: ML.FAMILIAR,
-        interval: days,
-        nextReview: addUtcDays(now, days),
-        difficulty: 'EASY',
-        easyInc: true,
-        hardInc: false,
-      };
+      // moderate: grow interval gently
+      let growth = Math.max(3, Math.ceil(card.interval * 1.5));
+      if (isStruggle) growth = Math.max(2, Math.ceil(growth * 0.5)); // halved for struggle
+      if (isEasyCard) growth = Math.ceil(growth * 1.5); // accelerated for easy
+      interval = clampInterval(growth);
+      break;
     }
     case RO.EASY:
-      if (card.masteryLevel === ML.NEW || card.masteryLevel === ML.LEARNING) {
-        const days = Math.max(2, card.interval * 2);
-        return {
-          masteryLevel: ML.FAMILIAR,
-          interval: days,
-          nextReview: addUtcDays(now, days),
-          difficulty: 'EASY',
-          easyInc: true,
-          hardInc: false,
-        };
-      }
-      if (card.masteryLevel === ML.FAMILIAR) {
-        const days = growMasteredInterval(card.interval);
-        return {
-          masteryLevel: ML.MASTERED,
-          interval: days,
-          nextReview: addUtcDays(now, days),
-          difficulty: 'EASY',
-          easyInc: true,
-          hardInc: false,
-        };
-      }
-      {
-        const days = growMasteredInterval(card.interval);
-        return {
-          masteryLevel: ML.MASTERED,
-          interval: days,
-          nextReview: addUtcDays(now, days),
-          difficulty: 'EASY',
-          easyInc: true,
-          hardInc: false,
-        };
-      }
     case RO.MASTERED: {
-      const days = growMasteredInterval(card.interval);
-      return {
-        masteryLevel: ML.MASTERED,
-        interval: days,
-        nextReview: addUtcDays(now, days),
-        difficulty: 'EASY',
-        easyInc: true,
-        hardInc: false,
-      };
+      // success: expand interval significantly
+      let base: number;
+      if (card.masteryLevel === ML.NEW || card.masteryLevel === ML.LEARNING) {
+        base = Math.max(3, card.interval * 2);
+      } else if (card.masteryLevel === ML.FAMILIAR) {
+        base = Math.max(7, Math.round(card.interval * 2.45));
+      } else {
+        base = Math.max(7, Math.round(card.interval * 2.45));
+      }
+      if (isStruggle) base = Math.max(2, Math.ceil(base * 0.5)); // halved
+      if (isEasyCard) base = Math.ceil(base * 1.5); // accelerated
+      interval = clampInterval(base);
+      break;
     }
   }
+
+  const masteryLevel = computeMasteryLevel(interval, wasHard);
+
+  return {
+    masteryLevel,
+    interval,
+    nextReview: addUtcDays(now, interval),
+    difficulty: wasHard ? 'HARD' : (outcome === RO.EASY || outcome === RO.MASTERED || outcome === RO.FAMILIAR) ? 'EASY' : 'NONE',
+    easyInc: !wasHard,
+    hardInc: wasHard,
+    // session summary
+    isStruggleCard: isStruggle || (wasHard && card.hardCount >= 2),
+    previousMasteryLevel,
+    updatedMasteryLevel: masteryLevel,
+    intervalDays: interval,
+    nextReviewDate: addUtcDays(now, interval).toISOString(),
+  };
 }
 
 type ReviewSortable = {
   nextReview: Date;
   lastReviewed: Date | null;
   createdAt: Date;
+  masteryLevel: string;
 };
 
 /**
- * Order cards for study: everything due or overdue first (oldest due date first),
- * then not-yet-due (soonest next review first). No random shuffle — preserves scheduling intent.
+ * Prioritized review queue:
+ * 1. Cards overdue by most days (most urgent)
+ * 2. LEARNING cards due today
+ * 3. FAMILIAR cards due today  
+ * 4. NEW cards (max 10 per session)
+ * Capped at MAX_SESSION_CARDS total
  */
 export function sortFlashcardsForReviewQueue<T extends ReviewSortable>(cards: T[], now: Date): T[] {
   const t = now.getTime();
-  const due: T[] = [];
+
+  const overdue: T[] = [];
+  const learningDue: T[] = [];
+  const familiarDue: T[] = [];
+  const newCards: T[] = [];
   const upcoming: T[] = [];
+
   for (const c of cards) {
-    if (c.nextReview.getTime() <= t) due.push(c);
-    else upcoming.push(c);
+    const isDue = c.nextReview.getTime() <= t;
+
+    if (isDue) {
+      if (c.masteryLevel === ML.LEARNING) {
+        learningDue.push(c);
+      } else if (c.masteryLevel === ML.FAMILIAR || c.masteryLevel === ML.MASTERED) {
+        overdue.push(c);
+      } else {
+        // NEW cards that are due
+        newCards.push(c);
+      }
+    } else {
+      upcoming.push(c);
+    }
   }
-  const cmp = (a: T, b: T) => {
-    const n = a.nextReview.getTime() - b.nextReview.getTime();
-    if (n !== 0) return n;
-    const la = a.lastReviewed?.getTime() ?? 0;
-    const lb = b.lastReviewed?.getTime() ?? 0;
-    if (la !== lb) return la - lb;
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  };
-  due.sort(cmp);
-  upcoming.sort(cmp);
-  return [...due, ...upcoming];
+
+  // sort overdue by how far overdue (most overdue first)
+  overdue.sort((a, b) => a.nextReview.getTime() - b.nextReview.getTime());
+  learningDue.sort((a, b) => a.nextReview.getTime() - b.nextReview.getTime());
+  // cap new cards to max 10 per session
+  const cappedNew = newCards.slice(0, MAX_NEW_PER_SESSION);
+
+  const queue = [...overdue, ...learningDue, ...familiarDue, ...cappedNew];
+
+  // if still under cap, add some upcoming
+  if (queue.length < MAX_SESSION_CARDS) {
+    upcoming.sort((a, b) => a.nextReview.getTime() - b.nextReview.getTime());
+    queue.push(...upcoming.slice(0, MAX_SESSION_CARDS - queue.length));
+  }
+
+  return queue.slice(0, MAX_SESSION_CARDS);
 }
