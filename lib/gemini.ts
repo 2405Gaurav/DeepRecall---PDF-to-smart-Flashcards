@@ -22,7 +22,7 @@ const PRESET_RANGES: Record<CardCountPreset, { min: number; max: number; label: 
 
 function buildPrompt(pdfText: string, preset: CardCountPreset = 'normal'): string {
   const { min, max, label } = PRESET_RANGES[preset];
-  return `You are an expert teacher creating revision flashcards for long-term retention (active recall, not passive recognition).
+  return `You are an expert teacher creating revision flashcards for long-term retention (active recall, not passive re-reading).
 
 SOURCE TEXT (only use information from here; do not invent facts):
 ---
@@ -30,10 +30,13 @@ ${pdfText}
 ---
 
 TASK:
-Create ${label} high-quality flashcards (${min}–${max} cards) that comprehensively cover the material.
+Create ${label} high-quality flashcards (${min}–${max} cards) that comprehensively cover the material — as if you taught this chapter and want a student to remember it weeks later.
 
 QUALITY BAR:
-- Cover: key concepts, precise definitions, relationships (cause/effect, compare/contrast), edge cases, and worked examples where the source includes them.
+- Coverage: key ideas, precise definitions, relationships (cause/effect, compare/contrast), edge cases, and worked examples or step-by-step reasoning when the source supports them.
+- Depth over volume: if the source is thin, output fewer excellent cards rather than padding with shallow trivia.
+- Voice: clear, encouraging, precise — like a great teacher, not a scraper listing headings.
+- Where helpful, include "why it matters" or common pitfalls in the answer (still grounded in the source).
 - Questions must require recall or explanation, not "What is the title of section 3?" style recognition.
 - Answers: concise but complete (typically 1–4 short sentences). No fluff.
 - Avoid duplicate or near-duplicate questions, vague prompts, and trivial filler.

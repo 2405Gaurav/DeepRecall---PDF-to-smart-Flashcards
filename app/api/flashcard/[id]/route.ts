@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
-import { ML, RO, type MasteryLevelLiteral, type ReviewOutcomeLiteral } from '@/lib/db-enums';
+import { RO, type ReviewOutcomeLiteral } from '@/lib/db-enums';
+import { planReviewUpdate } from '@/lib/spaced-repetition';
 import type { ReviewOutcome } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -16,12 +17,6 @@ const patchSchema = z
     message: 'Send { "outcome": ... } (or legacy "difficulty").',
   });
 
-function addUtcDays(base: Date, days: number): Date {
-  const d = new Date(base.getTime());
-  d.setUTCDate(d.getUTCDate() + days);
-  return d;
-}
-
 function normalizeOutcome(
   raw: 'EASY' | 'HARD' | 'LEARNING' | 'FAMILIAR' | 'MASTERED'
 ): ReviewOutcomeLiteral {
@@ -30,88 +25,6 @@ function normalizeOutcome(
   if (raw === 'LEARNING') return RO.LEARNING;
   if (raw === 'FAMILIAR') return RO.FAMILIAR;
   return RO.MASTERED;
-}
-
-function planUpdate(
-  outcome: ReviewOutcomeLiteral,
-  card: { interval: number; masteryLevel: string }
-): {
-  masteryLevel: MasteryLevelLiteral;
-  interval: number;
-  nextReview: Date;
-  difficulty: 'EASY' | 'HARD' | 'NONE';
-  easyInc: boolean;
-  hardInc: boolean;
-} {
-  const now = new Date();
-
-  switch (outcome) {
-    case RO.LEARNING:
-      return {
-        masteryLevel: ML.LEARNING,
-        interval: 1,
-        nextReview: addUtcDays(now, 1),
-        difficulty: 'HARD',
-        easyInc: false,
-        hardInc: true,
-      };
-    case RO.HARD:
-      return {
-        masteryLevel: ML.LEARNING,
-        interval: 1,
-        nextReview: addUtcDays(now, 1),
-        difficulty: 'HARD',
-        easyInc: false,
-        hardInc: true,
-      };
-    case RO.FAMILIAR:
-      return {
-        masteryLevel: ML.FAMILIAR,
-        interval: Math.max(3, Math.ceil(card.interval * 1.5)),
-        nextReview: addUtcDays(now, Math.max(3, Math.ceil(card.interval * 1.5))),
-        difficulty: 'EASY',
-        easyInc: true,
-        hardInc: false,
-      };
-    case RO.EASY:
-      if (card.masteryLevel === ML.NEW || card.masteryLevel === ML.LEARNING) {
-        return {
-          masteryLevel: ML.FAMILIAR,
-          interval: Math.max(2, card.interval * 2),
-          nextReview: addUtcDays(now, Math.max(2, card.interval * 2)),
-          difficulty: 'EASY',
-          easyInc: true,
-          hardInc: false,
-        };
-      }
-      if (card.masteryLevel === ML.FAMILIAR) {
-        return {
-          masteryLevel: ML.MASTERED,
-          interval: Math.max(7, card.interval * 2),
-          nextReview: addUtcDays(now, Math.max(7, card.interval * 2)),
-          difficulty: 'EASY',
-          easyInc: true,
-          hardInc: false,
-        };
-      }
-      return {
-        masteryLevel: ML.MASTERED,
-        interval: Math.max(7, card.interval * 2),
-        nextReview: addUtcDays(now, Math.max(7, card.interval * 2)),
-        difficulty: 'EASY',
-        easyInc: true,
-        hardInc: false,
-      };
-    case RO.MASTERED:
-      return {
-        masteryLevel: ML.MASTERED,
-        interval: Math.max(7, card.interval * 2),
-        nextReview: addUtcDays(now, Math.max(7, card.interval * 2)),
-        difficulty: 'EASY',
-        easyInc: true,
-        hardInc: false,
-      };
-  }
 }
 
 export async function PATCH(
@@ -151,7 +64,7 @@ export async function PATCH(
     }
 
     const ownerMatch = Boolean(sessionUserId && card.deck.userId === sessionUserId);
-    const plan = planUpdate(reviewOutcome, {
+    const plan = planReviewUpdate(reviewOutcome, {
       interval: card.interval,
       masteryLevel: card.masteryLevel,
     });

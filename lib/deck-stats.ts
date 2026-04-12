@@ -8,6 +8,8 @@ export type DeckListItem = {
   id: string;
   title: string;
   createdAt: Date;
+  /** Latest `lastReviewed` among cards in this deck — for “pick up where you left off”. */
+  lastReviewedAt: Date | null;
   totalCards: number;
   dueCards: number;
   newCards: number;
@@ -33,7 +35,7 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
   const items: DeckListItem[] = [];
 
   for (const d of decks) {
-    const [totalCards, dueCards, newCards, learningCards, familiarCards, masteredCards] =
+    const [totalCards, dueCards, newCards, learningCards, familiarCards, masteredCards, lastAgg] =
       await Promise.all([
         prisma.flashcard.count({ where: { deckId: d.id } }),
         prisma.flashcard.count({
@@ -43,6 +45,10 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
         countByMastery(d.id, ML.LEARNING),
         countByMastery(d.id, ML.FAMILIAR),
         countByMastery(d.id, ML.MASTERED),
+        prisma.flashcard.aggregate({
+          where: { deckId: d.id },
+          _max: { lastReviewed: true },
+        }),
       ]);
 
     const inProgressCards = Math.max(0, totalCards - masteredCards);
@@ -51,6 +57,7 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
       id: d.id,
       title: d.title,
       createdAt: d.createdAt,
+      lastReviewedAt: lastAgg._max.lastReviewed ?? null,
       totalCards,
       dueCards,
       newCards,

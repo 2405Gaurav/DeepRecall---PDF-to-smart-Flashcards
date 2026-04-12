@@ -4,7 +4,7 @@ import { CuemathHomeShell } from '@/components/cuemath/CuemathHomeShell';
 export const metadata: Metadata = {
   title: 'Cuemath Flashcards — PDF to DeepRecall decks',
   description:
-    'Cuemath-style flashcard studio: upload PDFs, generate AI flashcards, and review with spaced repetition.',
+    'Turn PDFs into teacher-quality flashcards, practice with spaced scheduling (long-term retention), and track mastery across all your decks.',
 };
 
 export default function Home() {

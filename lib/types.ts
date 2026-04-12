@@ -23,6 +23,8 @@ export interface DeckListItem {
   id: string;
   title: string;
   createdAt: string;
+  /** ISO date of most recent card review in this deck */
+  lastReviewedAt: string | null;
   totalCards: number;
   dueCards: number;
   newCards: number;

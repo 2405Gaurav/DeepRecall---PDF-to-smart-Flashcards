@@ -7,20 +7,20 @@ import { Table2, MonitorSmartphone, LineChart } from 'lucide-react';
 
 const features = [
   {
-    title: 'Decks & spaced review',
-    body: 'Turn PDFs into structured cards with ease scores and review history — like a tiny database for your course.',
+    title: 'Teacher-quality cards',
+    body: 'PDFs become recall-heavy questions — concepts, definitions, links between ideas, and examples — not shallow bullet dumps.',
     Icon: Table2,
     active: true,
   },
   {
-    title: 'Studio on any device',
-    body: 'Open your lab in the browser, review between classes, and pick up where you left off.',
+    title: 'Spaced repetition built in',
+    body: 'What you nail shows up later; what’s shaky returns sooner — scheduling inspired by proven spaced-review ideas (SM-2 style).',
     Icon: MonitorSmartphone,
     active: false,
   },
   {
-    title: 'Your progress, yours',
-    body: 'Per-deck stats and growth charts stay tied to your login — no anonymous drift.',
+    title: 'Progress you can feel',
+    body: 'Mastery, “due now,” and last-practiced cues across many decks — motivating without a wall of numbers.',
     Icon: LineChart,
     active: false,
   },
@@ -120,8 +120,8 @@ export function CueFlashcardSection() {
               A <span className="text-pink-600">Cue-flashcard</span> lab for your notes
             </h2>
             <p className="mt-4 text-base leading-relaxed text-lab-soft sm:text-lg">
-              One place to ingest PDFs, generate cards, and track how you&apos;re improving — with the same calm lab
-              feel as the rest of DeepRecall, tuned for daily recall.
+              Built around long-term retention: strong ingestion, smart scheduling after you practice, clear progress,
+              and deck tools that scale when you have dozens of topics — still light and a little playful for learners.
             </p>
 
             <ul className="mt-8 space-y-3">

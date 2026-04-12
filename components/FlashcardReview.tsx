@@ -1,3 +1,7 @@
+/**
+ * Legacy client review UI (Easy/Hard only). Studio uses `PracticeSession` + full outcomes;
+ * scheduling lives in `lib/spaced-repetition.ts`.
+ */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';

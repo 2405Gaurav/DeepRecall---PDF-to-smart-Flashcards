@@ -18,9 +18,24 @@ const OPTIONS: {
   hint: string;
   Icon: typeof Eye;
 }[] = [
-  { id: 'few', title: 'Create few ~10', hint: 'Key ideas only.', Icon: Eye },
-  { id: 'normal', title: 'Create normal ~20–40', hint: 'Balanced deck.', Icon: Layers },
-  { id: 'many', title: 'Create many ~50+', hint: 'More detail & examples.', Icon: Library },
+  {
+    id: 'few',
+    title: 'Light deck (~6–12)',
+    hint: 'Best when you want sharp recall on the biggest ideas — still teacher-quality, not filler.',
+    Icon: Eye,
+  },
+  {
+    id: 'normal',
+    title: 'Balanced (~15–28)',
+    hint: 'Definitions, links between ideas, and examples across the chapter — our default for retention.',
+    Icon: Layers,
+  },
+  {
+    id: 'many',
+    title: 'Deep pass (~30–50)',
+    hint: 'More edge cases and worked-style prompts when the PDF is rich; depth over trivia.',
+    Icon: Library,
+  },
 ];
 
 type CreateFlashcardsModalProps = {
@@ -40,16 +55,18 @@ export function CreateFlashcardsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl border-violet-100 sm:max-w-lg">
+      <DialogContent className="max-w-md rounded-2xl border-lab-line/80 sm:max-w-lg">
         <DialogHeader className="text-left">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-lab-teal text-white shadow-sm">
               <Layers className="h-5 w-5" aria-hidden />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold text-zinc-900">Create flashcards</DialogTitle>
-              <DialogDescription className="text-sm text-zinc-500">
-                From <span className="font-medium text-zinc-700">{fileName}</span>. Pick how many cards to aim for.
+              <DialogTitle className="text-lg font-bold text-lab-ink">Create flashcards</DialogTitle>
+              <DialogDescription className="text-sm text-lab-soft">
+                From <span className="font-medium text-lab-ink">{fileName}</span>. Choose coverage — AI favors{' '}
+                <span className="font-medium text-lab-teal-dark">recall-heavy</span> cards for long-term memory, not
+                shallow lists.
               </DialogDescription>
             </div>
           </div>
@@ -66,24 +83,24 @@ export function CreateFlashcardsModal({
                 className={cn(
                   'flex w-full items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition-colors',
                   selected
-                    ? 'border-violet-600 bg-violet-50/80'
-                    : 'border-zinc-100 bg-white hover:border-violet-200'
+                    ? 'border-lab-teal bg-lab-mint/50'
+                    : 'border-lab-line/60 bg-white hover:border-lab-teal/40'
                 )}
               >
                 <div
                   className={cn(
                     'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                    selected ? 'bg-violet-600 text-white' : 'bg-zinc-100 text-zinc-600'
+                    selected ? 'bg-lab-teal text-white' : 'bg-lab-mint/40 text-lab-teal-dark'
                   )}
                 >
                   <Icon className="h-5 w-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-zinc-900">{title}</p>
-                  <p className="text-xs text-zinc-500">{hint}</p>
+                  <p className="text-sm font-bold text-lab-ink">{title}</p>
+                  <p className="text-xs text-lab-soft">{hint}</p>
                 </div>
                 {selected && (
-                  <span className="text-violet-600" aria-hidden>
+                  <span className="text-lab-teal" aria-hidden>
                     ✓
                   </span>
                 )}
@@ -95,7 +112,7 @@ export function CreateFlashcardsModal({
         <button
           type="button"
           onClick={() => onConfirm(preset)}
-          className="mt-2 w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700"
+          className="mt-2 w-full rounded-xl bg-lab-teal py-3 text-sm font-bold text-white shadow-sm transition hover:bg-lab-teal-dark"
         >
           Create flashcards
         </button>

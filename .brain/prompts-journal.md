@@ -47,3 +47,9 @@
 
 - "read `.brain/context.md` + `prompt` then continue from last deck stats bug"
 - "dont touch .env follow ignore list"
+
+---
+
+**me:** align whole project strictly with Cuemath flashcard engine brief — ingestion quality, spaced repetition, progress, deck management, delight
+
+**intent:** document principles in `.brain/context`, centralize SRS in `lib/spaced-repetition.ts`, due-first review queue (no shuffle), deck list last-practiced + sort, stronger Gemini + marketing copy.

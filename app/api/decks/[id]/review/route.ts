@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { canAccessDeck } from '@/lib/deck-access';
+import { sortFlashcardsForReviewQueue } from '@/lib/spaced-repetition';
 
 export const runtime = 'nodejs';
-
-function shuffle<T>(items: T[]): T[] {
-  const a = [...items];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 export async function GET(
   request: NextRequest,
@@ -43,7 +35,7 @@ export async function GET(
       orderBy: { createdAt: 'asc' },
     });
 
-    const cards = shuffle(raw);
+    const cards = sortFlashcardsForReviewQueue(raw, now);
 
     return NextResponse.json({
       deckId,

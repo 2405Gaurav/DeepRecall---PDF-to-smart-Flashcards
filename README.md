@@ -1,6 +1,6 @@
 # Cue Maths — PDF flashcards
 
-A Next.js app that extracts text from PDFs with `pdf-parse`, generates 15–25 revision flashcards with the Gemini API, stores them in **PostgreSQL (Neon)** via **Prisma**, and runs a simple spaced-repetition review (due cards, interval doubling on Easy, reset on Hard).
+A Next.js app that extracts text from PDFs with `pdf-parse`, generates **teacher-style** revision flashcards with the Gemini API (concepts, definitions, relationships, examples — tuned for **long-term retention**), stores them in **PostgreSQL (Neon)** via **Prisma**, and schedules reviews with **SM-2-inspired** intervals in `lib/spaced-repetition.ts` (struggle → soon; success → longer gaps, capped at 365 days). The review queue is **ordered**, not shuffled: due cards first (most overdue first), then upcoming.
 
 ## Prerequisites
 
@@ -66,8 +66,8 @@ A Next.js app that extracts text from PDFs with `pdf-parse`, generates 15–25 r
 | `POST` | `/api/upload` | Multipart PDF → extract text → Gemini → deck + cards |
 | `GET` | `/api/decks` | List decks with stats (due, mastered, in progress) |
 | `GET` | `/api/decks/[id]` | Deck metadata + stats |
-| `GET` | `/api/decks/[id]/review` | Shuffled due cards (`nextReview <= now`) |
-| `PATCH` | `/api/flashcard/[id]` | Review outcome: `{ "outcome": "EASY" \| "HARD" }` |
+| `GET` | `/api/decks/[id]/review` | Due or all cards, **sorted for SRS** (`?scope=due` default, `scope=all` for full deck) |
+| `PATCH` | `/api/flashcard/[id]` | Review outcome: `LEARNING`, `FAMILIAR`, `MASTERED`, or legacy `EASY` / `HARD` |
 | `PATCH` | `/api/decks/[id]` | Rename: `{ "title": "..." }` |
 | `DELETE` | `/api/decks/[id]` | Delete deck |
 

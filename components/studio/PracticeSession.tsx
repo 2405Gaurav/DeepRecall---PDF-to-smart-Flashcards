@@ -215,6 +215,9 @@ export function PracticeSession({ deckId }: { deckId: string }) {
             {index + 1}/{total}
           </span>
         </div>
+        <p className="mx-auto max-w-2xl px-2 pb-1 text-center text-[10px] text-lab-soft/90">
+          Order: due cards first (most overdue), then the rest — spaced scheduling, not random.
+        </p>
       </motion.header>
 
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 py-6">

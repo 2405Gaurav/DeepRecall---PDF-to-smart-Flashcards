@@ -237,6 +237,10 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
           {showAnswers ? 'Hide' : 'Show'} answers
         </Button>
       </div>
+      <p className="mx-auto mt-3 max-w-md text-center text-[11px] leading-relaxed text-lab-soft">
+        After each card, how well you knew it updates when it comes back — easier cards wait longer; tricky ones return
+        sooner.
+      </p>
 
       <section className="mt-8">
         <h2 className="text-sm font-bold text-lab-ink">All flashcards</h2>
