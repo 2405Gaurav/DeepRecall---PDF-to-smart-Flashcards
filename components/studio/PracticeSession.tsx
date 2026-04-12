@@ -1,13 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Flame, TrendingUp, Trophy, PartyPopper, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, TrendingUp, Trophy, RotateCcw, AlertTriangle } from 'lucide-react';
 import type { ReviewFlashcard } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Confetti, useConfetti } from '@/components/ui/Confetti';
+import { useConfetti } from '@/components/ui/Confetti';
 import { StreakCounter, Mascot } from '@/components/ui/StreakCounter';
 import { MiniParticles } from '@/components/ui/FloatingParticles';
 import { NewBadgeCelebration } from '@/components/ui/BadgeDisplay';
@@ -163,7 +162,6 @@ type SessionSummary = {
 };
 
 export function PracticeSession({ deckId }: { deckId: string }) {
-  const router = useRouter();
   const [title, setTitle] = useState('');
   const [cards, setCards] = useState<ReviewFlashcard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,6 +194,31 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   } | null>(null);
   const [dailyStreak, setDailyStreak] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const completePracticeSession = useCallback(async () => {
+    if (cards.length === 0) return;
+
+    const res = await fetch(`/api/decks/${deckId}/practice/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ cardIds: cards.map((card) => card.id) }),
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (!data.streak) return;
+
+    setDailyStreak(data.streak.currentStreak ?? 0);
+    if (data.streak.newBadges?.length > 0) {
+      const badge = data.streak.newBadges[0];
+      fireConfetti();
+      setTimeout(() => {
+        setCelebratingBadge({ emoji: badge.emoji, title: badge.title, description: badge.description });
+      }, 500);
+    }
+  }, [cards, deckId, fireConfetti]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -305,18 +328,6 @@ export function PracticeSession({ deckId }: { deckId: string }) {
         }
       }
 
-      // badge celebration
-      if (data.streak) {
-        setDailyStreak(data.streak.currentStreak ?? 0);
-        if (data.streak.newBadges?.length > 0) {
-          const badge = data.streak.newBadges[0];
-          fireConfetti();
-          setTimeout(() => {
-            setCelebratingBadge({ emoji: badge.emoji, title: badge.title, description: badge.description });
-          }, 500);
-        }
-      }
-
       setDirection(1);
       if (index < total - 1) {
         setTimeout(() => {
@@ -325,6 +336,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
           setIsFlipped(false);
         }, 400);
       } else {
+        await completePracticeSession();
         setSessionComplete(true);
         fireConfetti();
         setMascotMood('celebrate');

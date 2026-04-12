@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
 import { RO, type ReviewOutcomeLiteral } from '@/lib/db-enums';
 import { planReviewUpdate } from '@/lib/spaced-repetition';
-import { recordPracticeDay } from '@/lib/streaks';
 import type { ReviewOutcome } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -104,20 +103,10 @@ export async function PATCH(
       });
     });
 
-    // update streaks & award badges outside transaction (non-blocking)
-    let streakInfo = null;
-    if (ownerMatch && sessionUserId) {
-      try {
-        streakInfo = await recordPracticeDay(sessionUserId);
-      } catch (e) {
-        console.warn('Streak update failed (non-fatal):', e);
-      }
-    }
-
     // return session summary data alongside the card
     return NextResponse.json({
       flashcard,
-      streak: streakInfo,
+      streak: null,
       sessionSummary: {
         updatedMasteryLevel: plan.updatedMasteryLevel,
         previousMasteryLevel: plan.previousMasteryLevel,

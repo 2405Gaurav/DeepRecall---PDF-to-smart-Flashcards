@@ -30,6 +30,7 @@ interface StreakBannerProps {
  */
 export function StreakBanner({ data, compact = false }: StreakBannerProps) {
   const { currentStreak, longestStreak, totalPracticeDays, practicedToday, nextBadge } = data;
+  const zeroStateQuote = 'Finish one full flashcard session today and your streak starts here.';
 
   // pick flame level based on streak length
   const flameEmoji = currentStreak >= 30 ? '🔥' : currentStreak >= 15 ? '🔥' : currentStreak >= 7 ? '🔥' : currentStreak >= 3 ? '🔥' : '✨';
@@ -38,7 +39,7 @@ export function StreakBanner({ data, compact = false }: StreakBannerProps) {
   if (compact) {
     return (
       <motion.div
-        className="flex items-center gap-3 rounded-xl border border-lab-line/70 bg-white/90 px-4 py-3 shadow-sm"
+        className="rounded-2xl border border-lab-line/70 bg-white/90 px-4 py-4 shadow-sm"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
