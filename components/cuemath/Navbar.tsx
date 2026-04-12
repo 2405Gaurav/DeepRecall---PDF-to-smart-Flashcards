@@ -4,22 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { SlideCtaButton } from '@/components/ui/SlideCtaButton';
+import { cn } from '@/lib/utils';
 
 const MotionLink = motion(Link);
 
 const MARKETING_LINKS = [
   { href: '#how-it-works', label: 'How it works' },
   { href: '/studio', label: 'Studio' },
-  { href: '#faq', label: 'Resources' },
   { href: '#about-service', label: 'About' },
+  { href: '#faq', label: 'FAQ' },
 ] as const;
 
-const STUDIO_LINKS = [
-  { href: '/#how-it-works', label: 'How it works' },
-  { href: '/studio', label: 'Studio' },
-  { href: '/profile', label: 'Profile' },
-  { href: '/#faq', label: 'FAQ' },
-] as const;
+/** Studio / profile / practice: home-only links removed — you’re already in the app. */
+const STUDIO_APP_LINKS = [{ href: '/profile', label: 'Profile' }] as const;
 
 const navSpring = { type: 'spring' as const, stiffness: 420, damping: 28 };
 
@@ -36,7 +33,7 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
     pathname === '/studio' ||
     pathname === '/profile' ||
     (pathname?.startsWith('/studio/') ?? false);
-  const links = isStudioRoute ? STUDIO_LINKS : MARKETING_LINKS;
+  const links = isStudioRoute ? STUDIO_APP_LINKS : MARKETING_LINKS;
 
   return (
     <motion.header
@@ -59,7 +56,7 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
             <MotionLink
               key={l.href + l.label}
               href={l.href}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-lab-soft transition-colors hover:text-lab-teal-dark"
+              className={cnNavLink(pathname, l.href)}
               whileHover={{ y: -1 }}
               transition={navSpring}
             >
@@ -107,7 +104,12 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
           <MotionLink
             key={l.href + l.label}
             href={l.href}
-            className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-lab-soft active:text-lab-teal-dark"
+            className={cn(
+              'rounded-md px-2 py-0.5 text-xs font-semibold active:text-lab-teal-dark',
+              pathname === l.href || (l.href === '/profile' && pathname === '/profile')
+                ? 'text-lab-teal-dark'
+                : 'text-lab-soft'
+            )}
             whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           >
@@ -116,5 +118,13 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
         ))}
       </nav>
     </motion.header>
+  );
+}
+
+function cnNavLink(pathname: string | null, href: string) {
+  const active = pathname === href || (href === '/profile' && pathname === '/profile');
+  return cn(
+    'rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors hover:text-lab-teal-dark',
+    active ? 'text-lab-teal-dark' : 'text-lab-soft'
   );
 }

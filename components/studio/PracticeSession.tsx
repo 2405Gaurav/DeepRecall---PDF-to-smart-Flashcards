@@ -180,7 +180,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-sm text-zinc-500">Loading…</div>
+      <div className="flex min-h-[50vh] items-center justify-center text-sm text-lab-soft">Loading…</div>
     );
   }
 
@@ -188,7 +188,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <p className="text-sm text-red-600">{error || 'No cards in this deck.'}</p>
-        <Link href={`/studio/deck/${deckId}`} className="mt-4 inline-block text-sm font-semibold text-violet-600">
+        <Link href={`/studio/deck/${deckId}`} className="mt-4 inline-block text-sm font-semibold text-lab-teal">
           ← Back to deck
         </Link>
       </div>
@@ -196,9 +196,9 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
+    <div className="flex min-h-screen flex-col bg-lab-grid font-cue">
       <motion.header
-        className="border-b border-zinc-200 bg-white px-4 py-3 shadow-sm"
+        className="border-b border-lab-line/70 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm"
         initial={{ y: -8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -206,12 +206,12 @@ export function PracticeSession({ deckId }: { deckId: string }) {
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
           <Link
             href={`/studio/deck/${deckId}`}
-            className="text-xs font-semibold text-zinc-500 transition-colors hover:text-violet-600"
+            className="text-xs font-semibold text-lab-soft transition-colors hover:text-lab-teal"
           >
             ✕ Exit practice
           </Link>
-          <p className="truncate text-center text-xs font-medium text-zinc-600">{title}</p>
-          <span className="text-xs font-bold text-zinc-800">
+          <p className="truncate text-center text-xs font-medium text-lab-soft">{title}</p>
+          <span className="text-xs font-bold text-lab-ink">
             {index + 1}/{total}
           </span>
         </div>
@@ -232,10 +232,10 @@ export function PracticeSession({ deckId }: { deckId: string }) {
               transition={cardSpring}
               className={cn(
                 'relative w-full rounded-2xl border-2 bg-white p-6 shadow-lg sm:p-7',
-                showAnswer ? 'border-violet-300' : 'border-lab-teal/25'
+                showAnswer ? 'border-sky-300/90' : 'border-lab-teal/35'
               )}
             >
-              <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-zinc-100 bg-white shadow-sm" />
+              <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-lab-line/40 bg-white/90 shadow-sm" />
 
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -245,13 +245,13 @@ export function PracticeSession({ deckId }: { deckId: string }) {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <p className="text-center text-base font-medium leading-relaxed text-zinc-900 sm:text-lg">
+                  <p className="text-center text-base font-medium leading-relaxed text-lab-ink sm:text-lg">
                     {showAnswer ? current.answer : current.question}
                   </p>
                   <p
                     className={cn(
                       'mt-4 text-center text-[10px] font-bold uppercase tracking-widest',
-                      showAnswer ? 'text-violet-600' : 'text-lab-teal'
+                      showAnswer ? 'text-sky-600' : 'text-lab-teal'
                     )}
                   >
                     {showAnswer ? 'Answer' : 'Question'}
@@ -270,8 +270,8 @@ export function PracticeSession({ deckId }: { deckId: string }) {
             className="mt-8 w-full max-w-md mx-auto space-y-3"
           >
             <div className="text-center">
-              <p className="text-sm font-bold text-zinc-900 sm:text-base">How well did you know this?</p>
-              <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+              <p className="text-sm font-bold text-lab-ink sm:text-base">How well did you know this?</p>
+              <p className="mt-1 text-xs text-lab-soft sm:text-sm">
                 Your choice updates your progress — still learning, getting there, or ready to move on.
               </p>
             </div>
@@ -291,12 +291,12 @@ export function PracticeSession({ deckId }: { deckId: string }) {
                     opt.ring
                   )}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/80 text-zinc-800 shadow-sm">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/80 text-lab-ink shadow-sm">
                     {opt.icon}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-zinc-900 sm:text-base">{opt.title}</span>
-                    <span className="mt-0.5 block text-xs text-zinc-600 sm:text-sm">{opt.subtitle}</span>
+                    <span className="block text-sm font-bold text-lab-ink sm:text-base">{opt.title}</span>
+                    <span className="mt-0.5 block text-xs text-lab-soft sm:text-sm">{opt.subtitle}</span>
                   </span>
                 </motion.button>
               ))}
@@ -304,14 +304,14 @@ export function PracticeSession({ deckId }: { deckId: string }) {
           </motion.div>
         )}
 
-        <p className="mt-4 text-center text-[11px] text-zinc-400">
+        <p className="mt-4 text-center text-[11px] text-lab-soft/80">
           Space: show answer · ← →: previous / next card
         </p>
 
         <div className="mt-auto flex flex-col gap-3 pt-8">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-lab-line/40">
             <motion.div
-              className="h-full bg-gradient-to-r from-lab-teal to-violet-600"
+              className="h-full bg-gradient-to-r from-lab-teal to-sky-500"
               initial={false}
               animate={{ width: `${progressPct}%` }}
               transition={{ type: 'spring', stiffness: 200, damping: 24 }}
@@ -324,7 +324,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
               disabled={index === 0}
               whileHover={{ scale: index === 0 ? 1 : 1.05 }}
               whileTap={{ scale: index === 0 ? 1 : 0.95 }}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-lab-line/80 bg-white text-lab-soft shadow-sm transition hover:border-lab-teal/40 disabled:opacity-30"
             >
               <ChevronLeft className="h-5 w-5" />
             </motion.button>
@@ -334,12 +334,12 @@ export function PracticeSession({ deckId }: { deckId: string }) {
                 onClick={() => setShowAnswer(true)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="min-w-[11rem] rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-violet-700"
+                className="min-w-[11rem] rounded-xl bg-lab-teal px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-lab-teal-dark"
               >
                 Show answer
               </motion.button>
             ) : (
-              <span className="min-w-[11rem] text-center text-xs text-zinc-500 sm:text-sm">
+              <span className="min-w-[11rem] text-center text-xs text-lab-soft sm:text-sm">
                 Choose how well you knew it above
               </span>
             )}
@@ -349,7 +349,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
               disabled={index >= total - 1}
               whileHover={{ scale: index >= total - 1 ? 1 : 1.05 }}
               whileTap={{ scale: index >= total - 1 ? 1 : 0.95 }}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-lab-line/80 bg-white text-lab-soft shadow-sm transition hover:border-lab-teal/40 disabled:opacity-30"
             >
               <ChevronRight className="h-5 w-5" />
             </motion.button>

@@ -28,6 +28,12 @@
 
 ---
 
+**me:** studio deck page — show only 5 flashcard pairs at a time with show more; on studio routes navbar drop how it works / studio / faq (home only); more blue-green kid-friendly colour + a little animation like the home lab; use components/ui; keep logging prompts in .brain
+
+**intent:** deck list pagination, minimal in-app nav, lab-grid + teal/sky theming across studio/profile/practice/deck, shadcn Button/Card on deck view.
+
+---
+
 ## Shorter one-offs (typos on purpose, like real chats)
 
 - "zoom it this much as in the iamge like a littlel large"

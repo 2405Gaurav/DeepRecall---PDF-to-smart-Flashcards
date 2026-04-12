@@ -18,7 +18,7 @@ export default async function StudioDeckPage({ params }: { params: Promise<{ id:
   const { id } = await params;
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-cue text-zinc-900">
+    <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
       <Navbar variant="studio" />
       <StudioDeckClient deckId={id} />
     </div>
