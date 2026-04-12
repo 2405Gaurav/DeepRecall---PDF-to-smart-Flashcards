@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, FileText, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CreateFlashcardsModal } from '@/components/studio/CreateFlashcardsModal';
+import { UploadLoader } from '@/components/ui/CueMathLoader';
 import type { CardCountPreset } from '@/lib/gemini';
 
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -157,18 +158,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
             </button>
           </div>
         ) : isUploading ? (
-          <div className="flex flex-col items-center justify-center gap-2 px-2 py-4 text-center sm:py-5">
-            <div className="flex items-center gap-3 text-base font-medium text-violet-800">
-              <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
-              <span>{progress || 'Working…'}</span>
-            </div>
-            {uploadLabel && (
-              <p className="text-sm text-zinc-500">
-                <span className="font-medium text-zinc-700">{uploadLabel}</span>
-              </p>
-            )}
-            <p className="max-w-sm text-xs text-zinc-400">Keep this tab open — creation runs on the studio screen.</p>
-          </div>
+          <UploadLoader stage={progress} fileName={uploadLabel ?? undefined} />
         ) : (
           <div className="py-4 text-center sm:py-5">
             <p className="text-base text-zinc-700 sm:text-lg">

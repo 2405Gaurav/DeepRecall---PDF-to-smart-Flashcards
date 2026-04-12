@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -81,22 +80,20 @@
   }
 }
 
-@layer utilities {
-  .bg-cue-grid {
-    background-color: #ffffff;
-    background-image:
-      linear-gradient(to right, #e8e8e8 1px, transparent 1px),
-      linear-gradient(to bottom, #e8e8e8 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
+@utility bg-cue-grid {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(to right, #e8e8e8 1px, transparent 1px),
+    linear-gradient(to bottom, #e8e8e8 1px, transparent 1px);
+  background-size: 24px 24px;
+}
 
-  .bg-lab-grid {
-    background-color: #f3f7f6;
-    background-image:
-      linear-gradient(to right, rgb(168 207 199 / 0.45) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(168 207 199 / 0.45) 1px, transparent 1px);
-    background-size: 28px 28px;
-  }
+@utility bg-lab-grid {
+  background-color: #f3f7f6;
+  background-image:
+    linear-gradient(to right, rgb(168 207 199 / 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(168 207 199 / 0.45) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 /* ── Child-friendly animation keyframes ── */
@@ -162,19 +159,19 @@
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-.animate-wiggle {
+@utility animate-wiggle {
   animation: wiggle 0.6s ease-in-out;
 }
 
-.animate-bounce-in {
+@utility animate-bounce-in {
   animation: bounce-in 0.5s ease-out forwards;
 }
 
-.animate-pulse-glow {
+@utility animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.animate-rainbow-shimmer {
+@utility animate-rainbow-shimmer {
   background: linear-gradient(
     90deg,
     #0f766e, #06b6d4, #8b5cf6, #ec4899, #f97316, #eab308, #22c55e, #0f766e
@@ -183,33 +180,33 @@
   animation: rainbow-shimmer 3s linear infinite;
 }
 
-.animate-float {
+@utility animate-float {
   animation: float-gentle 3s ease-in-out infinite;
 }
 
-.animate-celebration {
+@utility animate-celebration {
   animation: celebration-burst 0.6s ease-out forwards;
 }
 
-.animate-gradient-flow {
+@utility animate-gradient-flow {
   background: linear-gradient(90deg, #0f766e, #06b6d4, #0f766e);
   background-size: 200% 100%;
   animation: gradient-flow 2s linear infinite;
 }
 
 /* 3D card flip container support */
-.perspective-600 {
+@utility perspective-600 {
   perspective: 600px;
 }
 
-.preserve-3d {
+@utility preserve-3d {
   transform-style: preserve-3d;
 }
 
-.backface-hidden {
+@utility backface-hidden {
   backface-visibility: hidden;
 }
 
-.rotate-y-180 {
+@utility rotate-y-180 {
   transform: rotateY(180deg);
 }

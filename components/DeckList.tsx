@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Loader2, Search, Library, Sparkles } from 'lucide-react';
+import { Search, Library, Sparkles } from 'lucide-react';
+import { CueMathLoader } from '@/components/ui/CueMathLoader';
 import type { DeckListItem } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 
@@ -72,12 +73,7 @@ export function DeckList({ refreshKey = 0, compact = false }: { refreshKey?: num
   }, [filtered]);
 
   if (decks === null) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-8 text-sm text-lab-soft">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Loading…
-      </div>
-    );
+    return <CueMathLoader message="Loading your decks…" size="sm" />;
   }
 
   if (error) {

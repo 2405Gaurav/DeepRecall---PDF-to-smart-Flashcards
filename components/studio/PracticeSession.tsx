@@ -11,6 +11,7 @@ import { Confetti, useConfetti } from '@/components/ui/Confetti';
 import { StreakCounter, Mascot } from '@/components/ui/StreakCounter';
 import { MiniParticles } from '@/components/ui/FloatingParticles';
 import { NewBadgeCelebration } from '@/components/ui/BadgeDisplay';
+import { CueMathLoader } from '@/components/ui/CueMathLoader';
 
 type Outcome = 'LEARNING' | 'FAMILIAR' | 'MASTERED';
 
@@ -263,24 +264,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   }, [goPrev, goNext, showAnswer, revealAnswer]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <motion.div
-          className="flex flex-col items-center gap-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <motion.span
-            className="text-4xl"
-            animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            📚
-          </motion.span>
-          <span className="text-sm text-lab-soft">Loading your cards…</span>
-        </motion.div>
-      </div>
-    );
+    return <CueMathLoader message="Loading your cards…" fullScreen />;
   }
 
   if (error || !current) {
