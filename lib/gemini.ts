@@ -9,15 +9,15 @@ export interface RawFlashcard {
   type?: string;
 }
 
-const MAX_INPUT_CHARS = 20_000;
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MAX_INPUT_CHARS = 12_000;
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 
 export type CardCountPreset = 'few' | 'normal' | 'many';
 
 const PRESET_RANGES: Record<CardCountPreset, { min: number; max: number; label: string }> = {
-  few: { min: 8, max: 12, label: '8–12' },
-  normal: { min: 18, max: 28, label: '18–28' },
-  many: { min: 35, max: 50, label: '35–50' },
+  few: { min: 6, max: 10, label: '6–10' },
+  normal: { min: 12, max: 20, label: '12–20' },
+  many: { min: 25, max: 40, label: '25–40' },
 };
 
 const SYSTEM_PROMPT = `You are an exceptional teacher who has spent 20 years creating study materials. You understand that the best flashcards do not test recall of words — they test understanding of ideas. You never copy sentences from the source. You rewrite everything as a question that forces the student to think.`;
@@ -160,7 +160,7 @@ async function callModelOnce(pdfText: string, preset: CardCountPreset): Promise<
   const { passed, total } = qualityFilter(deduped);
 
   // if too few cards pass quality filter, throw to trigger retry
-  const floor: Record<CardCountPreset, number> = { few: 5, normal: 8, many: 12 };
+  const floor: Record<CardCountPreset, number> = { few: 4, normal: 6, many: 10 };
   if (passed.length < floor[preset]) {
     throw new Error(`Only ${passed.length}/${total} cards passed quality filter (need ${floor[preset]})`);
   }
