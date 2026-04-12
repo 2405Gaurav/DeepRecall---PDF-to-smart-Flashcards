@@ -14,11 +14,20 @@ const text = {
   hover: { color: '#ffffff' },
 };
 
+type CtaSize = 'default' | 'compact';
+
+const sizeInner: Record<CtaSize, string> = {
+  default:
+    'px-7 py-3.5 text-base font-bold tracking-tight sm:px-9 sm:py-4 sm:text-lg md:text-xl',
+  compact: 'px-3 py-2 text-sm font-bold tracking-tight',
+};
+
 type SlideCtaButtonProps = {
   children: React.ReactNode;
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit';
+  size?: CtaSize;
 };
 
 export function SlideCtaButton({
@@ -26,6 +35,7 @@ export function SlideCtaButton({
   onClick,
   className = '',
   type = 'button',
+  size = 'default',
 }: SlideCtaButtonProps) {
   return (
     <motion.button
@@ -42,7 +52,7 @@ export function SlideCtaButton({
         transition={{ duration: 0.3, ease: 'easeOut' }}
       />
       <motion.span
-        className="relative z-10 block px-7 py-3.5 text-base font-bold tracking-tight sm:px-9 sm:py-4 sm:text-lg md:text-xl"
+        className={`relative z-10 block ${sizeInner[size]}`}
         variants={text}
         transition={{ duration: 0.22 }}
       >
@@ -56,9 +66,10 @@ type SlideCtaLinkProps = {
   href: string;
   children: React.ReactNode;
   className?: string;
+  size?: CtaSize;
 };
 
-export function SlideCtaLink({ href, children, className = '' }: SlideCtaLinkProps) {
+export function SlideCtaLink({ href, children, className = '', size = 'default' }: SlideCtaLinkProps) {
   return (
     <Link href={href} className={`inline-flex ${className}`}>
       <motion.span
@@ -73,7 +84,7 @@ export function SlideCtaLink({ href, children, className = '' }: SlideCtaLinkPro
           transition={{ duration: 0.3, ease: 'easeOut' }}
         />
         <motion.span
-          className="relative z-10 block px-7 py-3.5 text-base font-bold tracking-tight sm:px-9 sm:py-4 sm:text-lg md:text-xl"
+          className={`relative z-10 block ${sizeInner[size]}`}
           variants={text}
           transition={{ duration: 0.22 }}
         >

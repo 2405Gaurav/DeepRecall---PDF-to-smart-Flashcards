@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Trophy, Handshake, Target, Sparkles } from 'lucide-react';
 import { Navbar } from '@/components/cuemath/Navbar';
+import { CueFlashcardSection } from '@/components/cuemath/CueFlashcardSection';
 import { Footer } from '@/components/cuemath/Footer';
 import { OnboardingModal } from '@/components/cuemath/OnboardingModal';
 import { SlideCtaButton, SlideCtaLink } from '@/components/ui/SlideCtaButton';
@@ -81,9 +82,9 @@ function HomeInner() {
         onComplete={handleOnboardingDone}
       />
 
-      <section className="mx-auto max-w-5xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16 md:pt-20">
+      <section className="mx-auto max-w-5xl px-4 pb-6 pt-10 sm:px-6 sm:pt-12 md:pt-14">
         <motion.p
-          className="text-center text-sm font-semibold uppercase tracking-[0.28em] text-lab-teal sm:text-base"
+          className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-lab-teal sm:text-sm"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -91,7 +92,7 @@ function HomeInner() {
           Cuemath · MathFit™ learning lab
         </motion.p>
         <motion.h1
-          className="mx-auto mt-6 max-w-4xl text-center font-display text-4xl font-bold leading-[1.08] tracking-tight text-lab-teal-dark sm:text-5xl md:text-6xl lg:text-7xl"
+          className="mx-auto mt-5 max-w-3xl text-center font-display text-3xl font-bold leading-[1.12] tracking-tight text-lab-teal-dark sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
@@ -99,7 +100,7 @@ function HomeInner() {
           A Personalized MathFit™ Journey — with Smart Flashcards
         </motion.h1>
         <motion.p
-          className="mx-auto mt-6 max-w-3xl text-center text-lg leading-relaxed text-lab-soft sm:text-xl md:text-2xl md:leading-relaxed"
+          className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-lab-soft sm:text-lg md:text-xl md:leading-relaxed"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.12 }}
@@ -108,7 +109,7 @@ function HomeInner() {
           MathFit™ for exams and beyond — with a calmer, teal-and-coral tone built for focus.
         </motion.p>
         <motion.div
-          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
+          className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -122,6 +123,8 @@ function HomeInner() {
           </Link>
         </motion.div>
       </section>
+
+      <CueFlashcardSection />
 
       {showReadyCta && (
         <motion.div
