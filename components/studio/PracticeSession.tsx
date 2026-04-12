@@ -1,15 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Flame, TrendingUp, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, TrendingUp, Trophy, PartyPopper, RotateCcw } from 'lucide-react';
 import type { ReviewFlashcard } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Confetti, useConfetti } from '@/components/ui/Confetti';
+import { StreakCounter, Mascot } from '@/components/ui/StreakCounter';
+import { MiniParticles } from '@/components/ui/FloatingParticles';
+import { NewBadgeCelebration } from '@/components/ui/BadgeDisplay';
 
 type Outcome = 'LEARNING' | 'FAMILIAR' | 'MASTERED';
 
+// maps raw API data to our ReviewFlashcard type
 function mapCard(c: Record<string, unknown>): ReviewFlashcard {
   return {
     id: String(c.id),
@@ -34,6 +39,7 @@ function mapCard(c: Record<string, unknown>): ReviewFlashcard {
 
 const cardSpring = { type: 'spring' as const, stiffness: 340, damping: 30, mass: 0.85 };
 
+// 3D-ish card slide animation — cards slide in from the side with a tilt
 const cardSlide = {
   enter: (dir: number) => {
     if (dir === 0) return { opacity: 0, y: 20, scale: 0.97 };
@@ -53,30 +59,34 @@ const OPTIONS: {
   icon: ReactNode;
   ring: string;
   bg: string;
+  emoji: string;
 }[] = [
   {
     outcome: 'LEARNING',
     title: 'Still learning',
-    subtitle: 'I needed the answer — not sure yet',
+    subtitle: "I needed the answer — that's okay!",
     icon: <Flame className="h-5 w-5" />,
     ring: 'ring-red-200 hover:ring-red-300',
     bg: 'bg-red-50/90 border-red-200/90',
+    emoji: '🤔',
   },
   {
     outcome: 'FAMILIAR',
     title: 'Getting there',
-    subtitle: 'Almost had it — a bit shaky',
+    subtitle: 'Almost had it — just a bit shaky',
     icon: <TrendingUp className="h-5 w-5" />,
     ring: 'ring-amber-200 hover:ring-amber-300',
     bg: 'bg-amber-50/90 border-amber-200/90',
+    emoji: '😊',
   },
   {
     outcome: 'MASTERED',
-    title: "I've got it",
+    title: "I've got it! ⭐",
     subtitle: 'Knew it well — ready to move on',
     icon: <Trophy className="h-5 w-5" />,
     ring: 'ring-emerald-200 hover:ring-emerald-300',
     bg: 'bg-emerald-50/90 border-emerald-200/90',
+    emoji: '🎉',
   },
 ];
 
@@ -90,6 +100,23 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [busy, setBusy] = useState(false);
   const [direction, setDirection] = useState(0);
+
+  // delight state — streaks, mascot mood, confetti
+  const [streak, setStreak] = useState(0);
+  const [mascotMood, setMascotMood] = useState<'idle' | 'happy' | 'think' | 'celebrate'>('idle');
+  const [fireConfetti, ConfettiOverlay] = useConfetti(50);
+  const [sessionComplete, setSessionComplete] = useState(false);
+  const [sessionStats, setSessionStats] = useState({ mastered: 0, familiar: 0, learning: 0 });
+
+  // badge celebration — pops up when a new badge is earned!
+  const [celebratingBadge, setCelebratingBadge] = useState<{
+    emoji: string; title: string; description: string;
+  } | null>(null);
+  // daily streak from API (persisted to DB)
+  const [dailyStreak, setDailyStreak] = useState(0);
+
+  // cardFlipped tracks 3D flip state for the current card
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -125,17 +152,44 @@ export function PracticeSession({ deckId }: { deckId: string }) {
     setDirection(-1);
     setIndex((i) => Math.max(0, i - 1));
     setShowAnswer(false);
+    setIsFlipped(false);
   }, []);
 
   const goNext = useCallback(() => {
     setDirection(1);
     setIndex((i) => Math.min(total - 1, i + 1));
     setShowAnswer(false);
+    setIsFlipped(false);
   }, [total]);
+
+  // handle the answer reveal with a 3D flip effect
+  const revealAnswer = useCallback(() => {
+    setIsFlipped(true);
+    // small delay so the flip animation plays before showing answer state
+    setTimeout(() => setShowAnswer(true), 200);
+  }, []);
 
   const sendOutcome = async (outcome: Outcome) => {
     if (!current || busy) return;
     setBusy(true);
+
+    // update mascot mood and streaks based on answer
+    if (outcome === 'MASTERED') {
+      setStreak((s) => s + 1);
+      setMascotMood('celebrate');
+      setSessionStats((s) => ({ ...s, mastered: s.mastered + 1 }));
+      // fire confetti for mastered cards!
+      if (streak >= 2) fireConfetti();
+    } else if (outcome === 'FAMILIAR') {
+      setStreak((s) => s + 1);
+      setMascotMood('happy');
+      setSessionStats((s) => ({ ...s, familiar: s.familiar + 1 }));
+    } else {
+      setStreak(0);
+      setMascotMood('think');
+      setSessionStats((s) => ({ ...s, learning: s.learning + 1 }));
+    }
+
     try {
       const res = await fetch(`/api/flashcard/${current.id}`, {
         method: 'PATCH',
@@ -144,24 +198,54 @@ export function PracticeSession({ deckId }: { deckId: string }) {
         body: JSON.stringify({ outcome }),
       });
       if (!res.ok) return;
+
+      // check if the API returned new badges or streak info
+      const data = await res.json();
+      if (data.streak) {
+        setDailyStreak(data.streak.currentStreak ?? 0);
+        // show badge celebration if a new badge was earned!
+        if (data.streak.newBadges?.length > 0) {
+          const badge = data.streak.newBadges[0];
+          fireConfetti();
+          setTimeout(() => {
+            setCelebratingBadge({ emoji: badge.emoji, title: badge.title, description: badge.description });
+          }, 500);
+        }
+      }
+
       setDirection(1);
       if (index < total - 1) {
-        setIndex((i) => i + 1);
-        setShowAnswer(false);
+        setTimeout(() => {
+          setIndex((i) => i + 1);
+          setShowAnswer(false);
+          setIsFlipped(false);
+        }, 400);
       } else {
-        router.push(`/studio/deck/${deckId}`);
+        // session complete! big celebration
+        setSessionComplete(true);
+        fireConfetti();
+        setMascotMood('celebrate');
       }
     } finally {
       setBusy(false);
     }
   };
 
+  // reset mascot mood after a bit
+  useEffect(() => {
+    if (mascotMood !== 'idle') {
+      const timer = setTimeout(() => setMascotMood('idle'), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [mascotMood]);
+
+  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.code === 'Space') {
         e.preventDefault();
-        setShowAnswer(true);
+        if (!showAnswer) revealAnswer();
         return;
       }
       if (e.key === 'ArrowLeft') {
@@ -176,17 +260,40 @@ export function PracticeSession({ deckId }: { deckId: string }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goPrev, goNext]);
+  }, [goPrev, goNext, showAnswer, revealAnswer]);
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-sm text-lab-soft">Loading…</div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <motion.div
+          className="flex flex-col items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.span
+            className="text-4xl"
+            animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            📚
+          </motion.span>
+          <span className="text-sm text-lab-soft">Loading your cards…</span>
+        </motion.div>
+      </div>
     );
   }
 
   if (error || !current) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <motion.span
+          className="mb-4 block text-5xl"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          😕
+        </motion.span>
         <p className="text-sm text-red-600">{error || 'No cards in this deck.'}</p>
         <Link href={`/studio/deck/${deckId}`} className="mt-4 inline-block text-sm font-semibold text-lab-teal">
           ← Back to deck
@@ -195,8 +302,134 @@ export function PracticeSession({ deckId }: { deckId: string }) {
     );
   }
 
+  // session complete screen with celebration
+  if (sessionComplete) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-lab-grid font-cue px-4">
+        <ConfettiOverlay />
+        <motion.div
+          className="mx-auto max-w-md text-center"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        >
+          <motion.span
+            className="mb-6 block text-7xl"
+            animate={{ rotate: [0, -10, 10, -5, 5, 0], y: [0, -15, 0] }}
+            transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
+          >
+            🎉
+          </motion.span>
+          <h1 className="font-display text-3xl font-bold text-lab-teal-dark sm:text-4xl">
+            Amazing work!
+          </h1>
+          <p className="mt-3 text-lg text-lab-soft">
+            You reviewed all <span className="font-bold text-lab-ink">{total}</span> cards in this deck!
+          </p>
+
+          {/* session stats with bouncy animations */}
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            <motion.div
+              className="rounded-xl border-2 border-emerald-200 bg-emerald-50 px-3 py-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <span className="block text-2xl">🏆</span>
+              <span className="mt-1 block text-2xl font-black text-emerald-700">{sessionStats.mastered}</span>
+              <span className="text-xs font-semibold text-emerald-600">Mastered</span>
+            </motion.div>
+            <motion.div
+              className="rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <span className="block text-2xl">📈</span>
+              <span className="mt-1 block text-2xl font-black text-amber-700">{sessionStats.familiar}</span>
+              <span className="text-xs font-semibold text-amber-600">Getting there</span>
+            </motion.div>
+            <motion.div
+              className="rounded-xl border-2 border-red-200 bg-red-50 px-3 py-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <span className="block text-2xl">🔥</span>
+              <span className="mt-1 block text-2xl font-black text-red-600">{sessionStats.learning}</span>
+              <span className="text-xs font-semibold text-red-500">Still learning</span>
+            </motion.div>
+          </div>
+
+          {dailyStreak > 0 && (
+            <motion.div
+              className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <motion.span
+                className="text-xl"
+                animate={{ rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 2 }}
+              >
+                🔥
+              </motion.span>
+              <span className="text-sm font-bold text-orange-700">
+                {dailyStreak}-day daily streak!
+              </span>
+            </motion.div>
+          )}
+
+          {streak >= 3 && (
+            <motion.p
+              className="mt-4 text-sm font-bold text-orange-600"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.7, type: 'spring' }}
+            >
+              🔥 Best streak: {streak} in a row!
+            </motion.p>
+          )}
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <motion.button
+              type="button"
+              onClick={() => {
+                setSessionComplete(false);
+                setIndex(0);
+                setShowAnswer(false);
+                setIsFlipped(false);
+                setStreak(0);
+                setSessionStats({ mastered: 0, familiar: 0, learning: 0 });
+              }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-lab-teal bg-white px-6 py-3 text-sm font-bold text-lab-teal shadow-sm transition hover:bg-lab-mint/30"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Practice again
+            </motion.button>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link
+                href={`/studio/deck/${deckId}`}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-lab-teal px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-lab-teal-dark"
+              >
+                Back to deck →
+              </Link>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-lab-grid font-cue">
+      <ConfettiOverlay />
+      <NewBadgeCelebration badge={celebratingBadge} onDismiss={() => setCelebratingBadge(null)} />
+
+      {/* header with progress and streak */}
       <motion.header
         className="border-b border-lab-line/70 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm"
         initial={{ y: -8, opacity: 0 }}
@@ -210,18 +443,25 @@ export function PracticeSession({ deckId }: { deckId: string }) {
           >
             ✕ Exit practice
           </Link>
-          <p className="truncate text-center text-xs font-medium text-lab-soft">{title}</p>
-          <span className="text-xs font-bold text-lab-ink">
-            {index + 1}/{total}
-          </span>
+
+          {/* streak counter lives in the header */}
+          <div className="flex items-center gap-3">
+            <StreakCounter streak={streak} />
+            <p className="truncate text-center text-xs font-medium text-lab-soft">{title}</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Mascot mood={mascotMood} className="text-2xl" />
+            <span className="text-xs font-bold text-lab-ink">
+              {index + 1}/{total}
+            </span>
+          </div>
         </div>
-        <p className="mx-auto max-w-2xl px-2 pb-1 text-center text-[10px] text-lab-soft/90">
-          Order: due cards first (most overdue), then the rest — spaced scheduling, not random.
-        </p>
       </motion.header>
 
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 py-6">
-        <div className="relative mx-auto min-h-[200px] w-full max-w-md">
+        {/* 3D card flip container */}
+        <div className="relative mx-auto min-h-[220px] w-full max-w-md perspective-600">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={current.id}
@@ -233,74 +473,91 @@ export function PracticeSession({ deckId }: { deckId: string }) {
               animate="center"
               exit="exit"
               transition={cardSpring}
-              className={cn(
-                'relative w-full rounded-2xl border-2 bg-white p-6 shadow-lg sm:p-7',
-                showAnswer ? 'border-sky-300/90' : 'border-lab-teal/35'
-              )}
+              className="relative w-full"
             >
-              <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-lab-line/40 bg-white/90 shadow-sm" />
+              {/* floating sparkle particles behind the card */}
+              <MiniParticles />
 
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={showAnswer ? `ans-${current.id}` : `q-${current.id}`}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <p className="text-center text-base font-medium leading-relaxed text-lab-ink sm:text-lg">
-                    {showAnswer ? current.answer : current.question}
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-4 text-center text-[10px] font-bold uppercase tracking-widest',
-                      showAnswer ? 'text-sky-600' : 'text-lab-teal'
-                    )}
+              {/* stacked card effect */}
+              <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-lab-line/40 bg-white/90 shadow-sm" />
+              <div className="pointer-events-none absolute -right-2 -z-20 h-full w-full translate-x-2 translate-y-4 rounded-2xl border border-lab-line/20 bg-white/70 shadow-sm" />
+
+              {/* main card body with 3D flip */}
+              <div className={cn(
+                'relative w-full rounded-2xl border-2 bg-white p-6 shadow-lg transition-all duration-500 sm:p-7',
+                isFlipped ? 'border-sky-300/90' : 'border-lab-teal/35',
+              )}>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={showAnswer ? `ans-${current.id}` : `q-${current.id}`}
+                    initial={{ opacity: 0, rotateY: showAnswer ? -90 : 0, scale: 0.95 }}
+                    animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotateY: showAnswer ? 0 : 90, scale: 0.95 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    {showAnswer ? 'Answer' : 'Question'}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+                    <p className="text-center text-base font-medium leading-relaxed text-lab-ink sm:text-lg">
+                      {showAnswer ? current.answer : current.question}
+                    </p>
+                    <motion.p
+                      className={cn(
+                        'mt-4 text-center text-[10px] font-bold uppercase tracking-widest',
+                        showAnswer ? 'text-sky-600' : 'text-lab-teal'
+                      )}
+                      initial={{ y: 5, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.15 }}
+                    >
+                      {showAnswer ? '✦ Answer' : '? Question'}
+                    </motion.p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
 
+        {/* outcome buttons — only show after answer is revealed */}
         {showAnswer && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="mt-8 w-full max-w-md mx-auto space-y-3"
           >
             <div className="text-center">
               <p className="text-sm font-bold text-lab-ink sm:text-base">How well did you know this?</p>
               <p className="mt-1 text-xs text-lab-soft sm:text-sm">
-                Your choice updates your progress — still learning, getting there, or ready to move on.
+                Your answer shapes what comes back — and when! 🧠
               </p>
             </div>
-            <div className="grid gap-2.5" role="group" aria-label="Difficulty — how well you knew the answer">
+            <div className="grid gap-2.5" role="group" aria-label="How well you knew the answer">
               {OPTIONS.map((opt) => (
                 <motion.button
                   key={opt.outcome}
                   type="button"
                   disabled={busy}
                   onClick={() => void sendOutcome(opt.outcome)}
-                  whileHover={{ scale: busy ? 1 : 1.01 }}
-                  whileTap={{ scale: busy ? 1 : 0.99 }}
+                  whileHover={{ scale: busy ? 1 : 1.02, y: busy ? 0 : -2 }}
+                  whileTap={{ scale: busy ? 1 : 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 22 }}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left shadow-sm ring-2 ring-transparent transition-colors disabled:opacity-50 sm:py-4',
+                    'flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left shadow-sm ring-2 ring-transparent transition-all disabled:opacity-50 sm:py-4',
                     opt.bg,
                     opt.ring
                   )}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/80 text-lab-ink shadow-sm">
+                  <motion.span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/80 text-lab-ink shadow-sm"
+                    whileHover={{ rotate: [0, -5, 5, 0] }}
+                    transition={{ duration: 0.4 }}
+                  >
                     {opt.icon}
-                  </span>
+                  </motion.span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold text-lab-ink sm:text-base">{opt.title}</span>
                     <span className="mt-0.5 block text-xs text-lab-soft sm:text-sm">{opt.subtitle}</span>
                   </span>
+                  <span className="text-lg">{opt.emoji}</span>
                 </motion.button>
               ))}
             </div>
@@ -311,10 +568,17 @@ export function PracticeSession({ deckId }: { deckId: string }) {
           Space: show answer · ← →: previous / next card
         </p>
 
+        {/* navigation and progress bar */}
         <div className="mt-auto flex flex-col gap-3 pt-8">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-lab-line/40">
+          {/* rainbow progress bar */}
+          <div className="h-2 w-full overflow-hidden rounded-full bg-lab-line/40">
             <motion.div
-              className="h-full bg-gradient-to-r from-lab-teal to-sky-500"
+              className={cn(
+                'h-full rounded-full',
+                progressPct >= 100
+                  ? 'animate-rainbow-shimmer'
+                  : 'bg-gradient-to-r from-lab-teal via-sky-500 to-violet-500'
+              )}
               initial={false}
               animate={{ width: `${progressPct}%` }}
               transition={{ type: 'spring', stiffness: 200, damping: 24 }}
@@ -325,8 +589,8 @@ export function PracticeSession({ deckId }: { deckId: string }) {
               type="button"
               onClick={goPrev}
               disabled={index === 0}
-              whileHover={{ scale: index === 0 ? 1 : 1.05 }}
-              whileTap={{ scale: index === 0 ? 1 : 0.95 }}
+              whileHover={{ scale: index === 0 ? 1 : 1.08 }}
+              whileTap={{ scale: index === 0 ? 1 : 0.92 }}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-lab-line/80 bg-white text-lab-soft shadow-sm transition hover:border-lab-teal/40 disabled:opacity-30"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -334,24 +598,24 @@ export function PracticeSession({ deckId }: { deckId: string }) {
             {!showAnswer ? (
               <motion.button
                 type="button"
-                onClick={() => setShowAnswer(true)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="min-w-[11rem] rounded-xl bg-lab-teal px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-lab-teal-dark"
+                onClick={revealAnswer}
+                whileHover={{ scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                className="min-w-[11rem] rounded-xl bg-lab-teal px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-lab-teal-dark animate-pulse-glow"
               >
-                Show answer
+                ✨ Show answer
               </motion.button>
             ) : (
               <span className="min-w-[11rem] text-center text-xs text-lab-soft sm:text-sm">
-                Choose how well you knew it above
+                Choose how well you knew it ↑
               </span>
             )}
             <motion.button
               type="button"
               onClick={goNext}
               disabled={index >= total - 1}
-              whileHover={{ scale: index >= total - 1 ? 1 : 1.05 }}
-              whileTap={{ scale: index >= total - 1 ? 1 : 0.95 }}
+              whileHover={{ scale: index >= total - 1 ? 1 : 1.08 }}
+              whileTap={{ scale: index >= total - 1 ? 1 : 0.92 }}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-lab-line/80 bg-white text-lab-soft shadow-sm transition hover:border-lab-teal/40 disabled:opacity-30"
             >
               <ChevronRight className="h-5 w-5" />

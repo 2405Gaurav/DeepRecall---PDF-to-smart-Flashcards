@@ -1,55 +1,50 @@
-# Prompt log (rough notes — how I actually talked to the assistant)
+# Prompts journal — session log
 
-> Same spirit as the PDF: if you repeat yourself, put it in a file. These are paraphrases of real threads so I dont have to re-explain the vibe each time.
+## 2026-04-12 — Major delight overhaul (children-focused animations)
 
----
+### What was asked
+Full review of the flashcard engine project for Cuemath's evaluation criteria: does it work, smart choices, delight, process thinking, and security. Requested more animations targeted at children.
 
-**me:** good but look the button on the navbar get started make it equal to the studio one and also reduce the sixe of navbar as well a little and the text on the hero section as well giving a rich experiance also add this kindoff section in the home page and name it like cue-flashcard
+### What was done
+1. **Security fix** — `.env.example` had real API keys and DB credentials exposed. Replaced with placeholders. `.env` is already in `.gitignore`.
 
-**intent:** tighten nav + hero typography, add a two-column “cue-flashcard” marketing block.
+2. **New UI components created**:
+   - `components/ui/Confetti.tsx` — Colorful confetti burst with circles, stars, squares, triangles. `useConfetti()` hook for easy integration.
+   - `components/ui/FloatingParticles.tsx` — Floating emoji particles (📘✨🧠🎯⭐📝🏆💡🔬🎨) that drift around. Includes `MiniParticles` for inside cards.
+   - `components/ui/StreakCounter.tsx` — Streak counter with escalating messages ("🔥 Nice!" → "🚀 Unstoppable!" → "✨ PERFECT RUN!") + Mascot emoji component that reacts to student choices (😄🤔🥳😊).
 
----
+3. **CSS animation system** — Added 10+ custom keyframe animations to `globals.css`: wiggle, bounce-in, pulse-glow, rainbow-shimmer, float-gentle, sparkle, slide-up-bounce, card-flip, gradient-flow, celebration-burst. Plus utility classes and 3D CSS helpers.
 
-**me:** convert studio like this and also reduce the size as this is for children so amke it a little concnise the studio part and then studio/practice route as well and store them in the DB all the score,performance all that
+4. **PracticeSession overhauled** — Full rewrite with:
+   - Confetti bursts when mastering cards (especially on streaks)
+   - Streak counter in the header with fire emoji that grows
+   - Mascot emoji reactions to student choices
+   - 3D card flip animation (perspective transform on reveal)
+   - Rainbow progress bar at 100%
+   - Session completion celebration screen with animated stats, best streak display, bouncy emoji
+   - Stacked card depth effect (two shadow cards behind)
+   - Mini floating particles behind the active card
 
-**intent:** purple/minimal studio reference, `/studio/practice`, mastery in DB, compact UI.
+5. **Homepage enhanced** — Floating emoji particles in hero, bouncy brain mascot (🧠), rocket emoji on CTA, sparkle in heading, feature cards with animated floating icons and tilt-on-hover.
 
----
+6. **DeckList enhanced** — Staggered entrance animations, mastery emoji indicators (🏆🌟💪📈🌱), pulsing "due" badges, "All caught up ✅" state, bouncy hover effects.
 
-**me:** make the studio page this big as on 100% its too small make it big as 125% and for the analyticals add a route profile … fix these errors in the terinal (MasteryLevel undefined, Event handlers cannot be passed…)
+7. **StudioDeckClient enhanced** — Animated SVG progress ring with gradient and emoji center, pulse-glow on Start Practice button, 🎯 emoji on CTA, sparkle on card count.
 
-**intent:** scale studio, `/profile`, fix Prisma enum import + server→client handler bug.
+8. **StudioClient enhanced** — Bouncy lab flask mascot (🧪), animated title badge, 👋 greeting, 📊 profile link pulse.
 
----
+9. **OnboardingModal enhanced** — Animated emoji per step (🌟😊🎈🚀), `AnimatePresence` step transitions, emojis in titles.
 
-**me:** DeepRecall use these as name not mathfit as it not jsut apply for the math … landing page is good and go with the cuemaths try to add that theme … loading should happen on the studio screen not on the selection of size component … fix the practice route sliding effect and a selector of difficulty that descied the perfomace of the child
+10. **Brain folder updated** — `context.md` rewritten with full animation system docs, security decisions, updated product principles.
 
-**intent:** rebrand copy, Cuemath motion polish, modal closes then upload spinner on studio surface, practice slides + explicit “how well did you know this” selector.
+### Tradeoffs made
+- Used emojis as visual indicators instead of custom SVG icons — faster to implement, universally rendered, and children love emojis.
+- Confetti is CSS/JS-based (no canvas) for simplicity and SSR compatibility.
+- Streak counter resets on wrong answer — considered keeping partial streaks but decided full reset is more motivating for kids to try harder.
+- 3D card flip uses CSS transform + framer-motion rather than full WebGL — right balance of delight vs complexity.
 
----
-
-**me:** studio deck page — show only 5 flashcard pairs at a time with show more; on studio routes navbar drop how it works / studio / faq (home only); more blue-green kid-friendly colour + a little animation like the home lab; use components/ui; keep logging prompts in .brain
-
-**intent:** deck list pagination, minimal in-app nav, lab-grid + teal/sky theming across studio/profile/practice/deck, shadcn Button/Card on deck view.
-
----
-
-## Shorter one-offs (typos on purpose, like real chats)
-
-- "zoom it this much as in the iamge like a littlel large"
-- "framer for a little animations as well little hover effect on the button chaging yelloe to black like lsiding effect"
-- "studio=login redirect when not onboarded"
-- "grep EPERM prisma generate windows"
-
----
-
-## If I only say one line next session
-
-- "read `.brain/context.md` + `prompt` then continue from last deck stats bug"
-- "dont touch .env follow ignore list"
-
----
-
-**me:** align whole project strictly with Cuemath flashcard engine brief — ingestion quality, spaced repetition, progress, deck management, delight
-
-**intent:** document principles in `.brain/context`, centralize SRS in `lib/spaced-repetition.ts`, due-first review queue (no shuffle), deck list last-practiced + sort, stronger Gemini + marketing copy.
+### What I'd do differently next time
+- Add sound effects (satisfying "ding" on correct, gentle "whoosh" on flip) — couldn't add without an audio file.
+- Implement a proper achievement/badge system (e.g. "First 10 cards mastered", "3-day streak") stored in the DB.
+- Add a dark mode with neon-style animations for older kids.
+- Consider gamification elements like XP points, leaderboards.

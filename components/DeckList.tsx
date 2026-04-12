@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Loader2, Search, Library, Sparkles } from 'lucide-react';
 import type { DeckListItem } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
@@ -89,11 +90,21 @@ export function DeckList({ refreshKey = 0, compact = false }: { refreshKey?: num
 
   if (decks.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-lab-line/80 bg-lab-mint/25 py-12 text-center">
-        <Sparkles className="mx-auto mb-3 h-10 w-10 text-lab-teal" />
-        <p className="text-base font-semibold text-lab-ink">No decks yet</p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-lab-soft">Upload a PDF above to create your first deck.</p>
-      </div>
+      <motion.div
+        className="rounded-2xl border border-dashed border-lab-line/80 bg-lab-mint/25 py-12 text-center"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200 }}
+      >
+        <motion.div
+          animate={{ y: [0, -8, 0], rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <Sparkles className="mx-auto mb-3 h-10 w-10 text-lab-teal" />
+        </motion.div>
+        <p className="text-base font-semibold text-lab-ink">No decks yet 📚</p>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-lab-soft">Upload a PDF above to create your first deck!</p>
+      </motion.div>
     );
   }
 
@@ -135,47 +146,71 @@ export function DeckList({ refreshKey = 0, compact = false }: { refreshKey?: num
       )}
 
       <ul className="space-y-2">
-        {sortedDecks.map((deck) => {
+        {sortedDecks.map((deck, i) => {
           const masteredPct =
             deck.totalCards > 0 ? Math.round((deck.masteredCards / deck.totalCards) * 100) : 0;
+          // pick an emoji based on mastery percentage
+          const masteryEmoji = masteredPct >= 100 ? '🏆' : masteredPct >= 75 ? '🌟' : masteredPct >= 50 ? '💪' : masteredPct >= 25 ? '📈' : '🌱';
           return (
-            <li key={deck.id}>
-              <Link
-                href={`/studio/deck/${deck.id}`}
-                className="block rounded-xl border border-lab-line/80 bg-white/95 p-4 shadow-sm transition hover:border-lab-teal/35 hover:shadow-md sm:p-5"
+            <motion.li
+              key={deck.id}
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              <motion.div
+                whileHover={{ y: -3, scale: 1.01 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-lab-ink">{deck.title}</p>
-                    <p className="mt-1 text-xs text-lab-soft">
-                      Added{' '}
-                      {new Date(deck.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                      {' · '}
-                      {formatLastPracticed(deck.lastReviewedAt)}
-                    </p>
+                <Link
+                  href={`/studio/deck/${deck.id}`}
+                  className="block rounded-xl border border-lab-line/80 bg-white/95 p-4 shadow-sm transition hover:border-lab-teal/35 hover:shadow-md sm:p-5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-lab-ink">
+                        {masteryEmoji} {deck.title}
+                      </p>
+                      <p className="mt-1 text-xs text-lab-soft">
+                        Added{' '}
+                        {new Date(deck.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                        {' · '}
+                        {formatLastPracticed(deck.lastReviewedAt)}
+                      </p>
+                    </div>
+                    {deck.dueCards > 0 ? (
+                      <motion.span
+                        className="shrink-0 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800"
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        🔥 {deck.dueCards} due
+                      </motion.span>
+                    ) : (
+                      <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        ✅ All caught up
+                      </span>
+                    )}
                   </div>
-                  <span className="shrink-0 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                    {deck.dueCards} due
-                  </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-lab-soft">
-                  <span className="rounded-md bg-blue-50 px-2 py-1 text-blue-800">New {deck.newCards}</span>
-                  <span className="rounded-md bg-red-50 px-2 py-1 text-red-800">Learn {deck.learningCards}</span>
-                  <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-900">Fam. {deck.familiarCards}</span>
-                  <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-800">Done {deck.masteredCards}</span>
-                </div>
-                <div className="mt-3">
-                  <div className="mb-1 flex justify-between text-xs text-lab-soft/90">
-                    <span>Mastered</span>
-                    <span>{masteredPct}%</span>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-lab-soft">
+                    <span className="rounded-md bg-blue-50 px-2 py-1 text-blue-800">🆕 New {deck.newCards}</span>
+                    <span className="rounded-md bg-red-50 px-2 py-1 text-red-800">🔥 Learn {deck.learningCards}</span>
+                    <span className="rounded-md bg-amber-50 px-2 py-1 text-amber-900">📚 Fam. {deck.familiarCards}</span>
+                    <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-800">⭐ Done {deck.masteredCards}</span>
                   </div>
-                  <Progress value={masteredPct} className="h-1" />
-                </div>
-              </Link>
-            </li>
+                  <div className="mt-3">
+                    <div className="mb-1 flex justify-between text-xs text-lab-soft/90">
+                      <span>Mastered</span>
+                      <span>{masteredPct}%</span>
+                    </div>
+                    <Progress value={masteredPct} className="h-1.5" />
+                  </div>
+                </Link>
+              </motion.div>
+            </motion.li>
           );
         })}
       </ul>

@@ -14,7 +14,9 @@ import {
 } from 'recharts';
 import { Navbar } from '@/components/cuemath/Navbar';
 import { Footer } from '@/components/cuemath/Footer';
+import { StreakBanner, BadgeWall } from '@/components/ui/BadgeDisplay';
 import type { UserAnalyticsPayload } from '@/lib/user-analytics';
+import type { UserStreakPayload } from '@/lib/streaks';
 import { TrendingUp, BookOpen, UserRound } from 'lucide-react';
 
 type ProfileClientProps = {
@@ -30,6 +32,7 @@ const fade = {
 
 export function ProfileClient({ displayName, childName, grade }: ProfileClientProps) {
   const [analytics, setAnalytics] = useState<UserAnalyticsPayload | null>(null);
+  const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -46,6 +49,11 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
 
   useEffect(() => {
     void load();
+    // also fetch streak data
+    fetch('/api/me/streak', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (d.streak) setStreakData(d.streak); })
+      .catch(() => {});
   }, [load]);
 
   const chartData =
@@ -109,6 +117,54 @@ export function ProfileClient({ displayName, childName, grade }: ProfileClientPr
             </div>
           </div>
         </motion.header>
+
+        {/* streak & badges section */}
+        {streakData && (
+          <motion.section
+            className="mt-8"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={fade}
+            transition={{ duration: 0.4, delay: 0.03 }}
+          >
+            <StreakBanner data={streakData} />
+          </motion.section>
+        )}
+
+        {streakData && streakData.badges.length > 0 && (
+          <motion.section
+            className="mt-8"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={fade}
+            transition={{ duration: 0.4, delay: 0.06 }}
+          >
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-xl">🏅</span>
+              <h2 className="font-display text-lg font-bold text-lab-ink">Your Badges</h2>
+              <span className="rounded-full bg-lab-teal/10 px-2.5 py-0.5 text-xs font-bold text-lab-teal">
+                {streakData.badges.length}
+              </span>
+            </div>
+            <BadgeWall badges={streakData.badges} />
+          </motion.section>
+        )}
+
+        {/* no badges yet — show encouragement */}
+        {streakData && streakData.badges.length === 0 && (
+          <motion.section
+            className="mt-8"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={fade}
+            transition={{ duration: 0.4, delay: 0.06 }}
+          >
+            <BadgeWall badges={[]} />
+          </motion.section>
+        )}
 
         <motion.section
           className="mt-10 rounded-2xl border border-lab-line/70 bg-white/95 p-6 shadow-sm backdrop-blur-sm sm:p-8"

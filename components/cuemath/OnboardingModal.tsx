@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, UserRound, Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -17,33 +18,37 @@ const STEP_COPY = [
     kicker: 'TAKE THE FIRST STEP TOWARDS EMPOWERING YOUR CHILD TO EXCEL AT SCHOOL AND BEYOND!',
     title: (
       <>
-        Which <strong>grade</strong> is your child in?
+        Which <strong>grade</strong> is your child in? 🎓
       </>
     ),
+    emoji: '🌟',
   },
   {
     kicker: 'JOIN OUR COMMUNITY OF LEARNERS BUILDING DEEPRECALL HABITS!',
     title: (
       <>
-        What&apos;s <strong>your name</strong>?
+        What&apos;s <strong>your name</strong>? 👋
       </>
     ),
+    emoji: '😊',
   },
   {
     kicker: 'EVERY CHILD IS UNIQUE, AND WE PERSONALIZE THE JOURNEY FOR YOUR CHILD!',
     title: (
       <>
-        What&apos;s your <strong>child&apos;s name</strong>?
+        What&apos;s your <strong>child&apos;s name</strong>? 🧒
       </>
     ),
+    emoji: '🎈',
   },
   {
     kicker: 'MOBILE NUMBER — OTP WILL VERIFY THIS LATER (DUMMY ENTRY FOR NOW)',
     title: (
       <>
-        What&apos;s your <strong>mobile number</strong>?
+        What&apos;s your <strong>mobile number</strong>? 📱
       </>
     ),
+    emoji: '🚀',
   },
 ] as const;
 
@@ -160,9 +165,30 @@ export function OnboardingModal({ open, onOpenChange, onComplete }: OnboardingMo
           <p className="text-center text-[10px] font-medium leading-relaxed tracking-wide text-lab-soft">
             {copy.kicker}
           </p>
-          <h2 className="mt-4 text-center font-display text-xl font-semibold leading-snug text-lab-teal-dark sm:text-2xl">
-            {copy.title}
-          </h2>
+
+          {/* animated emoji for each step */}
+          <motion.div
+            key={`emoji-${step}`}
+            className="mx-auto mt-3 w-fit text-3xl"
+            initial={{ scale: 0, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            {copy.emoji}
+          </motion.div>
+
+          <AnimatePresence mode="wait">
+            <motion.h2
+              key={step}
+              className="mt-3 text-center font-display text-xl font-semibold leading-snug text-lab-teal-dark sm:text-2xl"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              {copy.title}
+            </motion.h2>
+          </AnimatePresence>
 
           <div className="mt-8">
             {step === 0 && (

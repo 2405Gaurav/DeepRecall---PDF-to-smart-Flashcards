@@ -9,6 +9,9 @@ import { Navbar } from '@/components/cuemath/Navbar';
 import { CueFlashcardSection } from '@/components/cuemath/CueFlashcardSection';
 import { Footer } from '@/components/cuemath/Footer';
 import { OnboardingModal } from '@/components/cuemath/OnboardingModal';
+import { FloatingParticles } from '@/components/ui/FloatingParticles';
+import { StreakBanner } from '@/components/ui/BadgeDisplay';
+import type { UserStreakPayload } from '@/lib/streaks';
 import { SlideCtaButton, SlideCtaLink } from '@/components/ui/SlideCtaButton';
 import {
   Accordion,
@@ -34,6 +37,18 @@ const FAQ = [
     q: 'Which PDFs work best?',
     a: 'Text-based PDFs work well. Image-only scans may not extract enough text.',
   },
+  {
+    q: 'How do streaks and badges work?',
+    a: 'Every day you practice at least one card, your streak goes up by 1. Miss a day and it resets. Hit milestones like 3, 7, 15, or 30 days and you earn a badge — permanently! Your profile keeps a trophy wall of every badge you have collected so far.',
+  },
+  {
+    q: 'What does the spaced repetition algorithm actually do?',
+    a: "We use an SM-2 inspired system. When you mark a card as 'mastered,' it won't show again for several days. Cards marked 'still learning' come right back. The intervals grow — 1 day, 3 days, 7 days, 14 days — so you review tough cards more and easy ones less. It's math that helps your brain!",
+  },
+  {
+    q: 'Can I use this on my phone or tablet?',
+    a: 'Yes! The app is fully responsive — it works in any modern browser on phones, tablets, and desktops. No app install needed. Just open your studio URL and start practicing anywhere.',
+  },
 ] as const;
 
 function HomeInner() {
@@ -44,6 +59,7 @@ function HomeInner() {
     displayName: string | null;
     onboarded: boolean;
   } | null>(null);
+  const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
 
   useEffect(() => {
     fetch('/api/me/session', { credentials: 'include' })
@@ -59,6 +75,11 @@ function HomeInner() {
         }
       })
       .catch(() => setSessionUser(null));
+    // also fetch streak data for logged-in users
+    fetch('/api/me/streak', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (d.streak) setStreakData(d.streak); })
+      .catch(() => {});
   }, [justFinishedOnboarding]);
 
   useEffect(() => {
@@ -82,7 +103,24 @@ function HomeInner() {
         onComplete={handleOnboardingDone}
       />
 
-      <section className="mx-auto max-w-5xl px-4 pb-6 pt-10 sm:px-6 sm:pt-12 md:pt-14">
+      <section className="relative mx-auto max-w-5xl px-4 pb-6 pt-10 sm:px-6 sm:pt-12 md:pt-14">
+        {/* floating emoji particles in hero for playful atmosphere */}
+        <FloatingParticles />
+
+        <motion.div
+          className="mx-auto mb-4 flex justify-center"
+          initial={{ scale: 0, rotate: -45 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+        >
+          <motion.span
+            className="text-5xl select-none"
+            animate={{ y: [0, -8, 0], rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            🧠
+          </motion.span>
+        </motion.div>
         <motion.p
           className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-lab-teal sm:text-sm"
           initial={{ opacity: 0, y: 8 }}
@@ -97,7 +135,7 @@ function HomeInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
         >
-          A Personalized DeepRecall Journey — with Smart Flashcards
+          A Personalized DeepRecall Journey — with Smart Flashcards ✨
         </motion.h1>
         <motion.p
           className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-lab-soft sm:text-lg md:text-xl md:leading-relaxed"
@@ -114,8 +152,13 @@ function HomeInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
-          <SlideCtaButton onClick={() => setOnboardingOpen(true)}>Get Started</SlideCtaButton>
-          <motion.div whileHover={{ y: -1 }} transition={{ type: 'spring', stiffness: 400, damping: 28 }}>
+          <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <SlideCtaButton onClick={() => setOnboardingOpen(true)}>🚀 Get Started</SlideCtaButton>
+          </motion.div>
+          <motion.div whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 400, damping: 28 }}>
             <Link
               href="/studio"
               className="inline-flex rounded-xl px-1 text-base font-semibold text-lab-teal underline-offset-4 ring-lab-teal/15 transition hover:text-lab-teal-dark hover:underline hover:ring-2 sm:text-lg"
@@ -125,6 +168,18 @@ function HomeInner() {
           </motion.div>
         </motion.div>
       </section>
+
+      {/* streak banner for logged-in users — shows between hero and features */}
+      {showReadyCta && streakData && (
+        <motion.div
+          className="mx-auto max-w-xl px-4 pt-6 sm:px-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          <StreakBanner data={streakData} compact />
+        </motion.div>
+      )}
 
       <CueFlashcardSection />
 
@@ -177,14 +232,25 @@ function HomeInner() {
         ].map(({ title, body, Icon, bg, iconClass }, i) => (
           <motion.article
             key={title}
-            className={`relative overflow-hidden rounded-2xl border border-lab-line/80 ${bg} p-7 pt-12 shadow-sm md:p-8 md:pt-14`}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            className={`relative overflow-hidden rounded-2xl border border-lab-line/80 ${bg} p-7 pt-12 shadow-sm md:p-8 md:pt-14 cursor-pointer`}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ y: -3, transition: { type: 'spring', stiffness: 380, damping: 22 } }}
+            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{
+              y: -6,
+              scale: 1.02,
+              rotate: i % 2 === 0 ? 1 : -1,
+              transition: { type: 'spring', stiffness: 380, damping: 22 },
+            }}
           >
-            <Icon className={`absolute right-5 top-5 h-11 w-11 md:h-12 md:w-12 ${iconClass}`} aria-hidden />
+            <motion.div
+              className={`absolute right-5 top-5`}
+              animate={{ y: [0, -4, 0], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
+            >
+              <Icon className={`h-11 w-11 md:h-12 md:w-12 ${iconClass}`} aria-hidden />
+            </motion.div>
             <h2 className="font-display text-sm font-bold tracking-wide text-lab-teal-dark md:text-base">
               {title}
             </h2>

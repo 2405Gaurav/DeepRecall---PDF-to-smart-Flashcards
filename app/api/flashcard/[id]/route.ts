@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
 import { RO, type ReviewOutcomeLiteral } from '@/lib/db-enums';
 import { planReviewUpdate } from '@/lib/spaced-repetition';
+import { recordPracticeDay } from '@/lib/streaks';
 import type { ReviewOutcome } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -99,7 +100,17 @@ export async function PATCH(
       });
     });
 
-    return NextResponse.json({ flashcard });
+    // update streaks & award badges outside the transaction (non-blocking for card save)
+    let streakInfo = null;
+    if (ownerMatch && sessionUserId) {
+      try {
+        streakInfo = await recordPracticeDay(sessionUserId);
+      } catch (e) {
+        console.warn('Streak update failed (non-fatal):', e);
+      }
+    }
+
+    return NextResponse.json({ flashcard, streak: streakInfo });
   } catch (error) {
     console.error('Update flashcard error:', error);
     const message = error instanceof Error ? error.message : 'Failed to update flashcard';
