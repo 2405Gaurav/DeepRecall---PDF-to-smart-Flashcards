@@ -32,6 +32,54 @@ function mapCard(c: Record<string, unknown>): ReviewFlashcard {
   };
 }
 
+const cardSpring = { type: 'spring' as const, stiffness: 340, damping: 30, mass: 0.85 };
+
+const cardSlide = {
+  enter: (dir: number) => {
+    if (dir === 0) return { opacity: 0, y: 20, scale: 0.97 };
+    return { x: dir * 80, opacity: 0, rotate: dir * 2.5 };
+  },
+  center: { x: 0, y: 0, opacity: 1, scale: 1, rotate: 0 },
+  exit: (dir: number) => {
+    if (dir === 0) return { opacity: 0, y: -14, scale: 0.99 };
+    return { x: -dir * 80, opacity: 0, rotate: -dir * 2.5 };
+  },
+};
+
+const OPTIONS: {
+  outcome: Outcome;
+  title: string;
+  subtitle: string;
+  icon: ReactNode;
+  ring: string;
+  bg: string;
+}[] = [
+  {
+    outcome: 'LEARNING',
+    title: 'Still learning',
+    subtitle: 'I needed the answer — not sure yet',
+    icon: <Flame className="h-5 w-5" />,
+    ring: 'ring-red-200 hover:ring-red-300',
+    bg: 'bg-red-50/90 border-red-200/90',
+  },
+  {
+    outcome: 'FAMILIAR',
+    title: 'Getting there',
+    subtitle: 'Almost had it — a bit shaky',
+    icon: <TrendingUp className="h-5 w-5" />,
+    ring: 'ring-amber-200 hover:ring-amber-300',
+    bg: 'bg-amber-50/90 border-amber-200/90',
+  },
+  {
+    outcome: 'MASTERED',
+    title: "I've got it",
+    subtitle: 'Knew it well — ready to move on',
+    icon: <Trophy className="h-5 w-5" />,
+    ring: 'ring-emerald-200 hover:ring-emerald-300',
+    bg: 'bg-emerald-50/90 border-emerald-200/90',
+  },
+];
+
 export function PracticeSession({ deckId }: { deckId: string }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
@@ -41,6 +89,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   const [index, setIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [direction, setDirection] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +121,18 @@ export function PracticeSession({ deckId }: { deckId: string }) {
   const current = cards[index];
   const progressPct = total > 0 ? ((index + 1) / total) * 100 : 0;
 
+  const goPrev = useCallback(() => {
+    setDirection(-1);
+    setIndex((i) => Math.max(0, i - 1));
+    setShowAnswer(false);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setDirection(1);
+    setIndex((i) => Math.min(total - 1, i + 1));
+    setShowAnswer(false);
+  }, [total]);
+
   const sendOutcome = async (outcome: Outcome) => {
     if (!current || busy) return;
     setBusy(true);
@@ -83,6 +144,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
         body: JSON.stringify({ outcome }),
       });
       if (!res.ok) return;
+      setDirection(1);
       if (index < total - 1) {
         setIndex((i) => i + 1);
         setShowAnswer(false);
@@ -104,19 +166,17 @@ export function PracticeSession({ deckId }: { deckId: string }) {
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        setIndex((i) => Math.max(0, i - 1));
-        setShowAnswer(false);
+        goPrev();
         return;
       }
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        setIndex((i) => Math.min(total - 1, i + 1));
-        setShowAnswer(false);
+        goNext();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [total]);
+  }, [goPrev, goNext]);
 
   if (loading) {
     return (
@@ -137,11 +197,16 @@ export function PracticeSession({ deckId }: { deckId: string }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white px-4 py-3">
+      <motion.header
+        className="border-b border-zinc-200 bg-white px-4 py-3 shadow-sm"
+        initial={{ y: -8, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
           <Link
             href={`/studio/deck/${deckId}`}
-            className="text-xs font-semibold text-zinc-500 transition hover:text-violet-600"
+            className="text-xs font-semibold text-zinc-500 transition-colors hover:text-violet-600"
           >
             ✕ Exit practice
           </Link>
@@ -150,152 +215,147 @@ export function PracticeSession({ deckId }: { deckId: string }) {
             {index + 1}/{total}
           </span>
         </div>
-      </header>
+      </motion.header>
 
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 py-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current.id}
-            initial={{ opacity: 0, y: 10, rotate: -2 }}
-            animate={{ opacity: 1, y: 0, rotate: showAnswer ? 0 : -1.5 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className={cn(
-              'relative mx-auto w-full max-w-md rounded-2xl border-2 bg-white p-6 shadow-lg',
-              showAnswer ? 'border-violet-200' : 'border-red-200/80'
-            )}
-          >
-            <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-zinc-100 bg-white shadow-sm" />
-            <p className="text-center text-base font-medium leading-relaxed text-zinc-900 sm:text-lg">
-              {showAnswer ? current.answer : current.question}
-            </p>
-            {!showAnswer && (
-              <p className="mt-4 text-center text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                Question
-              </p>
-            )}
-            {showAnswer && (
-              <p className="mt-4 text-center text-[10px] font-semibold uppercase tracking-wider text-violet-500">
-                Answer
-              </p>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div className="relative mx-auto min-h-[200px] w-full max-w-md">
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            <motion.div
+              key={current.id}
+              role="group"
+              aria-label={`Card ${index + 1} of ${total}`}
+              custom={direction}
+              variants={cardSlide}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={cardSpring}
+              className={cn(
+                'relative w-full rounded-2xl border-2 bg-white p-6 shadow-lg sm:p-7',
+                showAnswer ? 'border-violet-300' : 'border-lab-teal/25'
+              )}
+            >
+              <div className="pointer-events-none absolute -right-1 -z-10 h-full w-full translate-x-1 translate-y-2 rounded-2xl border border-zinc-100 bg-white shadow-sm" />
+
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={showAnswer ? `ans-${current.id}` : `q-${current.id}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <p className="text-center text-base font-medium leading-relaxed text-zinc-900 sm:text-lg">
+                    {showAnswer ? current.answer : current.question}
+                  </p>
+                  <p
+                    className={cn(
+                      'mt-4 text-center text-[10px] font-bold uppercase tracking-widest',
+                      showAnswer ? 'text-violet-600' : 'text-lab-teal'
+                    )}
+                  >
+                    {showAnswer ? 'Answer' : 'Question'}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {showAnswer && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-5 flex flex-wrap justify-center gap-2"
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 w-full max-w-md mx-auto space-y-3"
           >
-            <RatePill
-              icon={<Flame className="h-4 w-4" />}
-              label="Learning"
-              sub="(1)"
-              color="text-red-600 border-red-200 bg-red-50"
-              onClick={() => void sendOutcome('LEARNING')}
-              disabled={busy}
-            />
-            <RatePill
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Familiar"
-              sub="(2)"
-              color="text-amber-700 border-amber-200 bg-amber-50"
-              onClick={() => void sendOutcome('FAMILIAR')}
-              disabled={busy}
-            />
-            <RatePill
-              icon={<Trophy className="h-4 w-4" />}
-              label="Mastered"
-              sub="(3)"
-              color="text-emerald-700 border-emerald-200 bg-emerald-50"
-              onClick={() => void sendOutcome('MASTERED')}
-              disabled={busy}
-            />
+            <div className="text-center">
+              <p className="text-sm font-bold text-zinc-900 sm:text-base">How well did you know this?</p>
+              <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+                Your choice updates your progress — still learning, getting there, or ready to move on.
+              </p>
+            </div>
+            <div className="grid gap-2.5" role="group" aria-label="Difficulty — how well you knew the answer">
+              {OPTIONS.map((opt) => (
+                <motion.button
+                  key={opt.outcome}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void sendOutcome(opt.outcome)}
+                  whileHover={{ scale: busy ? 1 : 1.01 }}
+                  whileTap={{ scale: busy ? 1 : 0.99 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left shadow-sm ring-2 ring-transparent transition-colors disabled:opacity-50 sm:py-4',
+                    opt.bg,
+                    opt.ring
+                  )}
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/80 text-zinc-800 shadow-sm">
+                    {opt.icon}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-zinc-900 sm:text-base">{opt.title}</span>
+                    <span className="mt-0.5 block text-xs text-zinc-600 sm:text-sm">{opt.subtitle}</span>
+                  </span>
+                </motion.button>
+              ))}
+            </div>
           </motion.div>
         )}
 
-        <p className="mt-3 text-center text-[10px] text-zinc-400">
-          Space flip · ← → move between cards
+        <p className="mt-4 text-center text-[11px] text-zinc-400">
+          Space: show answer · ← →: previous / next card
         </p>
 
         <div className="mt-auto flex flex-col gap-3 pt-8">
-          <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
             <motion.div
-              className="h-full bg-violet-600"
+              className="h-full bg-gradient-to-r from-lab-teal to-violet-600"
               initial={false}
               animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.2 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 24 }}
             />
           </div>
           <div className="flex items-center justify-center gap-3">
-            <button
+            <motion.button
               type="button"
-              onClick={() => {
-                setIndex((i) => Math.max(0, i - 1));
-                setShowAnswer(false);
-              }}
+              onClick={goPrev}
               disabled={index === 0}
+              whileHover={{ scale: index === 0 ? 1 : 1.05 }}
+              whileTap={{ scale: index === 0 ? 1 : 0.95 }}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm disabled:opacity-30"
             >
               <ChevronLeft className="h-5 w-5" />
-            </button>
+            </motion.button>
             {!showAnswer ? (
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setShowAnswer(true)}
-                className="min-w-[10rem] rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-violet-700"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="min-w-[11rem] rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-violet-700"
               >
                 Show answer
-              </button>
+              </motion.button>
             ) : (
-              <span className="min-w-[10rem] text-center text-xs text-zinc-400">Tap how well you knew it ↑</span>
+              <span className="min-w-[11rem] text-center text-xs text-zinc-500 sm:text-sm">
+                Choose how well you knew it above
+              </span>
             )}
-            <button
+            <motion.button
               type="button"
-              onClick={() => {
-                setIndex((i) => Math.min(total - 1, i + 1));
-                setShowAnswer(false);
-              }}
+              onClick={goNext}
               disabled={index >= total - 1}
+              whileHover={{ scale: index >= total - 1 ? 1 : 1.05 }}
+              whileTap={{ scale: index >= total - 1 ? 1 : 0.95 }}
               className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm disabled:opacity-30"
             >
               <ChevronRight className="h-5 w-5" />
-            </button>
+            </motion.button>
           </div>
         </div>
       </main>
     </div>
-  );
-}
-
-function RatePill({
-  icon,
-  label,
-  sub,
-  color,
-  onClick,
-  disabled,
-}: {
-  icon: ReactNode;
-  label: string;
-  sub: string;
-  color: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition hover:opacity-90 disabled:opacity-50',
-        color
-      )}
-    >
-      {icon}
-      {label} <span className="font-normal opacity-80">{sub}</span>
-    </button>
   );
 }

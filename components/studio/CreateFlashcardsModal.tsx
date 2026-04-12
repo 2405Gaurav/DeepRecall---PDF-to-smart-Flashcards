@@ -28,7 +28,6 @@ type CreateFlashcardsModalProps = {
   onOpenChange: (open: boolean) => void;
   fileName: string;
   onConfirm: (preset: CardCountPreset) => void;
-  submitting: boolean;
 };
 
 export function CreateFlashcardsModal({
@@ -36,18 +35,11 @@ export function CreateFlashcardsModal({
   onOpenChange,
   fileName,
   onConfirm,
-  submitting,
 }: CreateFlashcardsModalProps) {
   const [preset, setPreset] = useState<CardCountPreset>('normal');
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (submitting && !o) return;
-        onOpenChange(o);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl border-violet-100 sm:max-w-lg">
         <DialogHeader className="text-left">
           <div className="flex items-start gap-3">
@@ -70,7 +62,6 @@ export function CreateFlashcardsModal({
               <button
                 key={id}
                 type="button"
-                disabled={submitting}
                 onClick={() => setPreset(id)}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition-colors',
@@ -103,11 +94,10 @@ export function CreateFlashcardsModal({
 
         <button
           type="button"
-          disabled={submitting}
           onClick={() => onConfirm(preset)}
-          className="mt-2 w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700"
         >
-          {submitting ? 'Creating…' : 'Create flashcards'}
+          Create flashcards
         </button>
       </DialogContent>
     </Dialog>

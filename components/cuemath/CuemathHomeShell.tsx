@@ -20,7 +20,7 @@ import {
 const FAQ = [
   {
     q: 'What is Cuemath Flashcards?',
-    a: 'A MathFit™-style learning lab: turn PDF notes into AI flashcards, then review with spaced repetition. Your reviews and stats stay on your profile in the studio.',
+    a: 'A DeepRecall learning lab: turn PDF notes into AI flashcards, then review with spaced repetition. Your reviews and stats stay on your profile in the studio.',
   },
   {
     q: 'Where do I create decks?',
@@ -87,40 +87,42 @@ function HomeInner() {
           className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-lab-teal sm:text-sm"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
-          Cuemath · MathFit™ learning lab
+          Cuemath · DeepRecall learning lab
         </motion.p>
         <motion.h1
           className="mx-auto mt-5 max-w-3xl text-center font-display text-3xl font-bold leading-[1.12] tracking-tight text-lab-teal-dark sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.05 }}
+          transition={{ duration: 0.5, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
         >
-          A Personalized MathFit™ Journey — with Smart Flashcards
+          A Personalized DeepRecall Journey — with Smart Flashcards
         </motion.h1>
         <motion.p
           className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-lab-soft sm:text-lg md:text-xl md:leading-relaxed"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12 }}
+          transition={{ duration: 0.45, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
         >
           Our PDF flashcard lab builds active recall decks from your notes so you can practice daily and stay
-          MathFit™ for exams and beyond — with a calmer, teal-and-coral tone built for focus.
+          sharp for exams and beyond — with a calmer, teal-and-coral tone built for focus.
         </motion.p>
         <motion.div
           className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.45, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
           <SlideCtaButton onClick={() => setOnboardingOpen(true)}>Get Started</SlideCtaButton>
-          <Link
-            href="/studio"
-            className="text-base font-semibold text-lab-teal underline-offset-4 transition hover:text-lab-teal-dark hover:underline sm:text-lg"
-          >
-            Already set up? Open your studio →
-          </Link>
+          <motion.div whileHover={{ y: -1 }} transition={{ type: 'spring', stiffness: 400, damping: 28 }}>
+            <Link
+              href="/studio"
+              className="inline-flex rounded-xl px-1 text-base font-semibold text-lab-teal underline-offset-4 ring-lab-teal/15 transition hover:text-lab-teal-dark hover:underline hover:ring-2 sm:text-lg"
+            >
+              Already set up? Open your studio →
+            </Link>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -131,7 +133,7 @@ function HomeInner() {
           className="mx-auto max-w-4xl px-4 sm:px-6"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26 }}
         >
           <div className="flex flex-col items-center gap-5 rounded-2xl border-2 border-lab-teal/40 bg-white/95 px-6 py-8 text-center shadow-lg sm:flex-row sm:justify-between sm:px-10 sm:text-left">
             <div>
@@ -179,8 +181,8 @@ function HomeInner() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.45, delay: i * 0.08 }}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ y: -3, transition: { type: 'spring', stiffness: 380, damping: 22 } }}
           >
             <Icon className={`absolute right-5 top-5 h-11 w-11 md:h-12 md:w-12 ${iconClass}`} aria-hidden />
             <h2 className="font-display text-sm font-bold tracking-wide text-lab-teal-dark md:text-base">

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: 'Cuemath Flashcards',
     template: '%s · Cuemath Flashcards',
   },
-  description: 'PDF to flashcards — MathFit™ style learning studio.',
+  description: 'PDF to flashcards — DeepRecall learning studio.',
 };
 
 export default function RootLayout({

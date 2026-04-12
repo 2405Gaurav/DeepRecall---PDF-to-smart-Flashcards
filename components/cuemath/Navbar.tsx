@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { SlideCtaButton } from '@/components/ui/SlideCtaButton';
+
+const MotionLink = motion(Link);
 
 const MARKETING_LINKS = [
   { href: '#how-it-works', label: 'How it works' },
@@ -17,6 +20,8 @@ const STUDIO_LINKS = [
   { href: '/profile', label: 'Profile' },
   { href: '/#faq', label: 'FAQ' },
 ] as const;
+
+const navSpring = { type: 'spring' as const, stiffness: 420, damping: 28 };
 
 type NavbarProps = {
   /** Omit on server-rendered pages; optional on client (studio uses no-op). */
@@ -34,43 +39,57 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
   const links = isStudioRoute ? STUDIO_LINKS : MARKETING_LINKS;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-lab-line/80 bg-white/90 backdrop-blur-md">
+    <motion.header
+      className="sticky top-0 z-40 border-b border-lab-line/80 bg-white/90 backdrop-blur-md"
+      initial={false}
+    >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[3.5rem] sm:px-6">
-        <Link
+        <MotionLink
           href="/"
           className="font-display text-lg font-bold tracking-tight text-lab-teal-dark sm:text-xl md:text-2xl"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={navSpring}
         >
           CUEMATH
-        </Link>
+        </MotionLink>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-1 md:flex md:gap-2">
           {links.map((l) => (
-            <Link
+            <MotionLink
               key={l.href + l.label}
               href={l.href}
-              className="text-sm font-semibold text-lab-soft transition-colors hover:text-lab-teal-dark"
+              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-lab-soft transition-colors hover:text-lab-teal-dark"
+              whileHover={{ y: -1 }}
+              transition={navSpring}
             >
               {l.label}
-            </Link>
+            </MotionLink>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
           {!isStudioRoute && (
-            <Link
+            <MotionLink
               href="/studio"
-              className="hidden rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition hover:bg-lab-teal hover:text-white md:inline-block"
+              className="hidden rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition-colors hover:bg-lab-teal hover:text-white md:inline-block"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={navSpring}
             >
               Studio
-            </Link>
+            </MotionLink>
           )}
           {isStudioRoute ? (
-            <Link
+            <MotionLink
               href="/"
-              className="rounded-lg border-2 border-lab-teal bg-white px-3 py-2 text-sm font-bold leading-none text-lab-teal shadow-sm transition hover:bg-lab-teal hover:text-white"
+              className="rounded-lg border-2 border-lab-teal bg-white px-3 py-2 text-sm font-bold leading-none text-lab-teal shadow-sm transition-colors hover:bg-lab-teal hover:text-white"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={navSpring}
             >
               Home
-            </Link>
+            </MotionLink>
           ) : (
             <>
               <SlideCtaButton onClick={onGetStarted} size="compact" className="md:hidden">
@@ -83,13 +102,19 @@ export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: Navba
           )}
         </div>
       </div>
-      <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-lab-line/60 px-4 py-2 md:hidden">
+      <nav className="flex flex-wrap justify-center gap-x-3 gap-y-1 border-t border-lab-line/60 px-4 py-2 md:hidden">
         {links.map((l) => (
-          <Link key={l.href + l.label} href={l.href} className="text-xs font-semibold text-lab-soft">
+          <MotionLink
+            key={l.href + l.label}
+            href={l.href}
+            className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-lab-soft active:text-lab-teal-dark"
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          >
             {l.label}
-          </Link>
+          </MotionLink>
         ))}
       </nav>
-    </header>
+    </motion.header>
   );
 }

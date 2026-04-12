@@ -121,7 +121,7 @@ export function CueFlashcardSection() {
             </h2>
             <p className="mt-4 text-base leading-relaxed text-lab-soft sm:text-lg">
               One place to ingest PDFs, generate cards, and track how you&apos;re improving — with the same calm lab
-              feel as the rest of MathFit™, tuned for daily recall.
+              feel as the rest of DeepRecall, tuned for daily recall.
             </p>
 
             <ul className="mt-8 space-y-3">

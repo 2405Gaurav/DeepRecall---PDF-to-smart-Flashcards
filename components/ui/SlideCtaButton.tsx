@@ -41,7 +41,7 @@ export function SlideCtaButton({
     <motion.button
       type={type}
       onClick={onClick}
-      className={`relative inline-flex overflow-hidden rounded-lg border-2 border-lab-ink bg-lab-amber shadow-md ${className}`}
+      className={`relative inline-flex overflow-hidden rounded-lg border-2 border-lab-ink bg-lab-amber shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lab-teal/45 focus-visible:ring-offset-2 ${className}`}
       initial="rest"
       whileHover="hover"
       whileTap={{ scale: 0.98 }}
@@ -71,7 +71,10 @@ type SlideCtaLinkProps = {
 
 export function SlideCtaLink({ href, children, className = '', size = 'default' }: SlideCtaLinkProps) {
   return (
-    <Link href={href} className={`inline-flex ${className}`}>
+    <Link
+      href={href}
+      className={`inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lab-teal/45 focus-visible:ring-offset-2 ${className}`}
+    >
       <motion.span
         className="relative inline-flex overflow-hidden rounded-lg border-2 border-lab-ink bg-lab-amber shadow-md"
         initial="rest"

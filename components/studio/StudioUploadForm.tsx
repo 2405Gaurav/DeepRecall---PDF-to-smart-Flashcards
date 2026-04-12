@@ -17,6 +17,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
@@ -61,8 +62,15 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const uploadWithPreset = async (cardPreset: CardCountPreset) => {
-    if (!file) return;
+  const handleModalConfirm = (preset: CardCountPreset) => {
+    const f = file;
+    if (!f) return;
+
+    setModalOpen(false);
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    setUploadLabel(f.name);
     setIsUploading(true);
     setError(null);
     setSuccess(null);
@@ -75,35 +83,37 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
       setProgress(stages[i]);
     }, 7000);
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('cardPreset', cardPreset);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'include' });
-      const data = await res.json();
-      if (res.status === 401) {
-        throw new Error(
-          data.error || 'Please finish Get started on the home page, then open Studio again.'
-        );
+    const run = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', f);
+        formData.append('cardPreset', preset);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'include' });
+        const data = await res.json();
+        if (res.status === 401) {
+          throw new Error(
+            data.error || 'Please finish Get started on the home page, then open Studio again.'
+          );
+        }
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        const count = data.deck?.flashcards?.length ?? 0;
+        const title = data.deck?.title ?? 'your deck';
+        setSuccess(`${count} cards from “${title}”`);
+
+        onSuccess?.();
+        router.push(`/studio/deck/${data.deck.id}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Upload failed');
+      } finally {
+        clearInterval(tick);
+        setIsUploading(false);
+        setProgress('');
+        setUploadLabel(null);
       }
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
+    };
 
-      const count = data.deck?.flashcards?.length ?? 0;
-      const title = data.deck?.title ?? 'your deck';
-      setSuccess(`${count} cards from “${title}”`);
-      setFile(null);
-      setModalOpen(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      onSuccess?.();
-      router.push(`/studio/deck/${data.deck.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      clearInterval(tick);
-      setIsUploading(false);
-      setProgress('');
-    }
+    void run();
   };
 
   return (
@@ -147,9 +157,17 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
             </button>
           </div>
         ) : isUploading ? (
-          <div className="flex items-center justify-center gap-3 py-4 text-base font-medium text-violet-800">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            {progress || 'Working…'}
+          <div className="flex flex-col items-center justify-center gap-2 px-2 py-4 text-center sm:py-5">
+            <div className="flex items-center gap-3 text-base font-medium text-violet-800">
+              <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
+              <span>{progress || 'Working…'}</span>
+            </div>
+            {uploadLabel && (
+              <p className="text-sm text-zinc-500">
+                <span className="font-medium text-zinc-700">{uploadLabel}</span>
+              </p>
+            )}
+            <p className="max-w-sm text-xs text-zinc-400">Keep this tab open — creation runs on the studio screen.</p>
           </div>
         ) : (
           <div className="py-4 text-center sm:py-5">
@@ -199,8 +217,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
           if (!o) setFile(null);
         }}
         fileName={file?.name ?? ''}
-        submitting={isUploading}
-        onConfirm={(preset) => void uploadWithPreset(preset)}
+        onConfirm={handleModalConfirm}
       />
     </div>
   );

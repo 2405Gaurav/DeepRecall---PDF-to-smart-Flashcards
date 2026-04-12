@@ -22,7 +22,7 @@ const STEP_COPY = [
     ),
   },
   {
-    kicker: 'JOIN OUR COMMUNITY OF LEARNERS BUILDING MATHFIT™ HABITS!',
+    kicker: 'JOIN OUR COMMUNITY OF LEARNERS BUILDING DEEPRECALL HABITS!',
     title: (
       <>
         What&apos;s <strong>your name</strong>?

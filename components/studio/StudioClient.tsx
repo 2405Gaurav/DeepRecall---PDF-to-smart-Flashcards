@@ -50,6 +50,9 @@ export function StudioClient({ displayName }: StudioClientProps) {
             </span>{' '}
             in seconds.
           </p>
+          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-violet-600/90 sm:text-sm">
+            DeepRecall · recall for any subject
+          </p>
           <p className="mt-4 text-sm text-zinc-500 sm:text-base">
             Hi, {displayName} — your decks & scores stay on your{' '}
             <Link href="/profile" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
