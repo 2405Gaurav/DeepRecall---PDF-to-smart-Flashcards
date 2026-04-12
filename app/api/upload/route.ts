@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const presetRaw = (formData.get('cardPreset') as string | null)?.toLowerCase();
+    const cardPreset =
+      presetRaw === 'few' || presetRaw === 'many' || presetRaw === 'normal' ? presetRaw : 'normal';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -64,6 +67,7 @@ export async function POST(request: NextRequest) {
 
     const { deck, flashcards } = await createDeckFromExtractedText(deckTitle, text, {
       userId: u.id,
+      cardPreset,
     });
 
     return NextResponse.json(

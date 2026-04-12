@@ -35,23 +35,25 @@ model Deck {
 }
 
 model Flashcard {
-  id           String      @id @default(uuid()) @db.Uuid
+  id           String        @id @default(uuid()) @db.Uuid
   question     String
   answer       String
-  cardType     CardType    @default(CONCEPT) @map("card_type")
-  difficulty   Difficulty  @default(NONE)
-  interval     Int         @default(1)
-  nextReview   DateTime    @default(now()) @map("next_review")
-  lastReviewed DateTime?   @map("last_reviewed")
-  easyCount    Int         @default(0) @map("easy_count")
-  hardCount    Int         @default(0) @map("hard_count")
-  deckId       String      @map("deck_id") @db.Uuid
-  createdAt    DateTime    @default(now()) @map("created_at")
-  deck         Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  cardType     CardType      @default(CONCEPT) @map("card_type")
+  difficulty   Difficulty    @default(NONE)
+  masteryLevel MasteryLevel  @default(NEW) @map("mastery_level")
+  interval     Int           @default(1)
+  nextReview   DateTime      @default(now()) @map("next_review")
+  lastReviewed DateTime?     @map("last_reviewed")
+  easyCount    Int           @default(0) @map("easy_count")
+  hardCount    Int           @default(0) @map("hard_count")
+  deckId       String        @map("deck_id") @db.Uuid
+  createdAt    DateTime      @default(now()) @map("created_at")
+  deck         Deck          @relation(fields: [deckId], references: [id], onDelete: Cascade)
   reviewLogs   ReviewLog[]
 
   @@index([deckId])
   @@index([deckId, nextReview])
+  @@index([deckId, masteryLevel])
   @@map("flashcards")
 }
 
@@ -84,4 +86,14 @@ enum CardType {
 enum ReviewOutcome {
   EASY
   HARD
+  LEARNING
+  FAMILIAR
+  MASTERED
+}
+
+enum MasteryLevel {
+  NEW
+  LEARNING
+  FAMILIAR
+  MASTERED
 }

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { generateFlashcards, normalizeCardType } from '@/lib/gemini';
+import { generateFlashcards, normalizeCardType, type CardCountPreset } from '@/lib/gemini';
 
 function normalizeExtractedText(text: string): string {
   return text
@@ -14,7 +14,7 @@ const now = () => new Date();
 export async function createDeckFromExtractedText(
   deckTitle: string,
   rawText: string,
-  opts?: { userId?: string | null }
+  opts?: { userId?: string | null; cardPreset?: CardCountPreset }
 ) {
   const text = normalizeExtractedText(rawText);
   if (text.length < 100) {
@@ -23,7 +23,7 @@ export async function createDeckFromExtractedText(
     );
   }
 
-  const rawFlashcards = await generateFlashcards(text);
+  const rawFlashcards = await generateFlashcards(text, opts?.cardPreset ?? 'normal');
 
   const title =
     deckTitle.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').trim() ||

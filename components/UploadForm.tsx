@@ -106,7 +106,7 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
 
       setTimeout(() => {
         onSuccess?.();
-        router.push(`/deck/${data.deck.id}`);
+        router.push(`/studio/deck/${data.deck.id}`);
       }, 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');

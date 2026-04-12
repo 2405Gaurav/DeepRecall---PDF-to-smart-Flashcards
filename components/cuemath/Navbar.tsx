@@ -14,18 +14,24 @@ const MARKETING_LINKS = [
 const STUDIO_LINKS = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/studio', label: 'Studio' },
+  { href: '/profile', label: 'Profile' },
   { href: '/#faq', label: 'FAQ' },
 ] as const;
 
 type NavbarProps = {
-  onGetStarted: () => void;
+  /** Omit on server-rendered pages; optional on client (studio uses no-op). */
+  onGetStarted?: () => void;
   variant?: 'marketing' | 'studio';
 };
 
-export function Navbar({ onGetStarted, variant = 'marketing' }: NavbarProps) {
+export function Navbar({ onGetStarted = () => {}, variant = 'marketing' }: NavbarProps) {
   const pathname = usePathname();
-  const isStudio = variant === 'studio' || pathname === '/studio';
-  const links = isStudio ? STUDIO_LINKS : MARKETING_LINKS;
+  const isStudioRoute =
+    variant === 'studio' ||
+    pathname === '/studio' ||
+    pathname === '/profile' ||
+    (pathname?.startsWith('/studio/') ?? false);
+  const links = isStudioRoute ? STUDIO_LINKS : MARKETING_LINKS;
 
   return (
     <header className="sticky top-0 z-40 border-b border-lab-line/80 bg-white/90 backdrop-blur-md">
@@ -50,7 +56,7 @@ export function Navbar({ onGetStarted, variant = 'marketing' }: NavbarProps) {
         </nav>
 
         <div className="flex items-center gap-2">
-          {!isStudio && (
+          {!isStudioRoute && (
             <Link
               href="/studio"
               className="hidden rounded-lg border-2 border-lab-teal px-3 py-2 text-sm font-bold leading-none text-lab-teal transition hover:bg-lab-teal hover:text-white md:inline-block"
@@ -58,7 +64,7 @@ export function Navbar({ onGetStarted, variant = 'marketing' }: NavbarProps) {
               Studio
             </Link>
           )}
-          {isStudio ? (
+          {isStudioRoute ? (
             <Link
               href="/"
               className="rounded-lg border-2 border-lab-teal bg-white px-3 py-2 text-sm font-bold leading-none text-lab-teal shadow-sm transition hover:bg-lab-teal hover:text-white"

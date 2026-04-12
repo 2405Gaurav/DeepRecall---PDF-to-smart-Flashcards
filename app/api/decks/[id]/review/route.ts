@@ -19,6 +19,7 @@ export async function GET(
 ) {
   try {
     const { id: deckId } = await params;
+    const scope = request.nextUrl.searchParams.get('scope');
 
     const deck = await prisma.deck.findUnique({ where: { id: deckId } });
     if (!deck) {
@@ -29,20 +30,26 @@ export async function GET(
     }
 
     const now = new Date();
-    const due = await prisma.flashcard.findMany({
-      where: {
-        deckId,
-        nextReview: { lte: now },
-      },
+    const where =
+      scope === 'all'
+        ? { deckId }
+        : {
+            deckId,
+            nextReview: { lte: now },
+          };
+
+    const raw = await prisma.flashcard.findMany({
+      where,
       orderBy: { createdAt: 'asc' },
     });
 
-    const cards = shuffle(due);
+    const cards = shuffle(raw);
 
     return NextResponse.json({
       deckId,
       cards,
-      dueCount: cards.length,
+      dueCount: scope === 'all' ? raw.filter((c) => c.nextReview <= now).length : cards.length,
+      scope: scope === 'all' ? 'all' : 'due',
     });
   } catch (error) {
     console.error('Review queue error:', error);

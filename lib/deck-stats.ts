@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
+import { ML, type MasteryLevelLiteral } from '@/lib/db-enums';
+import type { DeckDetailStats } from '@/lib/types';
 
-const MASTER_INTERVAL_THRESHOLD = 7;
+const LEGACY_MASTER_INTERVAL = 7;
 
 export type DeckListItem = {
   id: string;
@@ -8,9 +10,17 @@ export type DeckListItem = {
   createdAt: Date;
   totalCards: number;
   dueCards: number;
+  newCards: number;
+  learningCards: number;
+  familiarCards: number;
   masteredCards: number;
+  /** @deprecated use masteredCards + masteryLevel breakdown */
   inProgressCards: number;
 };
+
+async function countByMastery(deckId: string, level: MasteryLevelLiteral) {
+  return prisma.flashcard.count({ where: { deckId, masteryLevel: level } });
+}
 
 export async function getDeckListStatsForUser(userId: string): Promise<DeckListItem[]> {
   const decks = await prisma.deck.findMany({
@@ -20,19 +30,20 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
   });
 
   const now = new Date();
-
   const items: DeckListItem[] = [];
 
   for (const d of decks) {
-    const [totalCards, dueCards, masteredCards] = await Promise.all([
-      prisma.flashcard.count({ where: { deckId: d.id } }),
-      prisma.flashcard.count({
-        where: { deckId: d.id, nextReview: { lte: now } },
-      }),
-      prisma.flashcard.count({
-        where: { deckId: d.id, interval: { gt: MASTER_INTERVAL_THRESHOLD } },
-      }),
-    ]);
+    const [totalCards, dueCards, newCards, learningCards, familiarCards, masteredCards] =
+      await Promise.all([
+        prisma.flashcard.count({ where: { deckId: d.id } }),
+        prisma.flashcard.count({
+          where: { deckId: d.id, nextReview: { lte: now } },
+        }),
+        countByMastery(d.id, ML.NEW),
+        countByMastery(d.id, ML.LEARNING),
+        countByMastery(d.id, ML.FAMILIAR),
+        countByMastery(d.id, ML.MASTERED),
+      ]);
 
     const inProgressCards = Math.max(0, totalCards - masteredCards);
 
@@ -42,6 +53,9 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
       createdAt: d.createdAt,
       totalCards,
       dueCards,
+      newCards,
+      learningCards,
+      familiarCards,
       masteredCards,
       inProgressCards,
     });
@@ -50,24 +64,31 @@ export async function getDeckListStatsForUser(userId: string): Promise<DeckListI
   return items;
 }
 
-export async function getDeckDetailStats(deckId: string) {
+export async function getDeckDetailStats(deckId: string): Promise<DeckDetailStats> {
   const now = new Date();
-  const [totalCards, dueCards, masteredCards] = await Promise.all([
-    prisma.flashcard.count({ where: { deckId } }),
-    prisma.flashcard.count({
-      where: { deckId, nextReview: { lte: now } },
-    }),
-    prisma.flashcard.count({
-      where: { deckId, interval: { gt: MASTER_INTERVAL_THRESHOLD } },
-    }),
-  ]);
+  const [totalCards, dueCards, newCards, learningCards, familiarCards, masteredCards] =
+    await Promise.all([
+      prisma.flashcard.count({ where: { deckId } }),
+      prisma.flashcard.count({
+        where: { deckId, nextReview: { lte: now } },
+      }),
+      countByMastery(deckId, ML.NEW),
+      countByMastery(deckId, ML.LEARNING),
+      countByMastery(deckId, ML.FAMILIAR),
+      countByMastery(deckId, ML.MASTERED),
+    ]);
+
+  const masteredPct = totalCards > 0 ? Math.round((masteredCards / totalCards) * 100) : 0;
 
   return {
     totalCards,
     dueCards,
+    newCards,
+    learningCards,
+    familiarCards,
     masteredCards,
-    inProgressCards: Math.max(0, totalCards - masteredCards),
+    masteredPct,
   };
 }
 
-export { MASTER_INTERVAL_THRESHOLD };
+export { LEGACY_MASTER_INTERVAL as MASTER_INTERVAL_THRESHOLD };
