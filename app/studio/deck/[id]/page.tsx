@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth-session';
-import { Navbar } from '@/components/cuemath/Navbar';
 import { StudioDeckClient } from '@/components/studio/StudioDeckClient';
 
 export const metadata: Metadata = {
@@ -19,7 +18,6 @@ export default async function StudioDeckPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
-      <Navbar variant="studio" />
       <StudioDeckClient deckId={id} />
     </div>
   );

@@ -12,8 +12,6 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import { Navbar } from '@/components/cuemath/Navbar';
-import { Footer } from '@/components/cuemath/Footer';
 import { StreakBanner, BadgeWall } from '@/components/ui/BadgeDisplay';
 import type { UserAnalyticsPayload } from '@/lib/user-analytics';
 import type { UserStreakPayload } from '@/lib/streaks';
@@ -79,8 +77,6 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
 
   return (
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
-      <Navbar variant="studio" />
-
       <main className="mx-auto max-w-4xl px-5 py-8 text-[1.0625rem] leading-relaxed sm:px-8 sm:py-12">
 
         {/* ── Profile header card ── */}
@@ -367,8 +363,6 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
           )}
         </motion.section>
       </main>
-
-      <Footer />
     </div>
   );
 }

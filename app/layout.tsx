@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { DM_Sans, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/hooks/useAuth';
+import { LayoutShell } from '@/components/layout/LayoutShell';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -17,10 +18,10 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Cuemath Flashcards',
-    template: '%s · Cuemath Flashcards',
+    default: 'DeepRecall — Smart Flashcards',
+    template: '%s · DeepRecall',
   },
-  description: 'PDF to flashcards — DeepRecall learning studio.',
+  description: 'PDF to flashcards — DeepRecall learning studio by Cuemath.',
 };
 
 export default function RootLayout({
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${outfit.variable}`}>
       <body className={`${dmSans.className} font-cue antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </AuthProvider>
       </body>
     </html>
   );

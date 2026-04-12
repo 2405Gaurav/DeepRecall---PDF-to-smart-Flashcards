@@ -3,8 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Navbar } from '@/components/cuemath/Navbar';
-import { Footer } from '@/components/cuemath/Footer';
 import { StudioUploadForm } from '@/components/studio/StudioUploadForm';
 import { DeckList } from '@/components/DeckList';
 import { TrendingUp, Sparkles } from 'lucide-react';
@@ -40,8 +38,6 @@ export function StudioClient({ displayName }: StudioClientProps) {
 
   return (
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
-      <Navbar variant="studio" />
-
       <main className="mx-auto max-w-4xl px-5 py-8 text-[1.0625rem] leading-relaxed sm:px-8 sm:py-12">
         <motion.header
           className="text-center"
@@ -178,8 +174,6 @@ export function StudioClient({ displayName }: StudioClientProps) {
           </motion.div>
         </motion.div>
       </main>
-
-      <Footer />
     </div>
   );
 }

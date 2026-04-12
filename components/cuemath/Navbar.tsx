@@ -55,12 +55,13 @@ export function Navbar({
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[3.5rem] sm:px-6">
         <MotionLink
           href="/"
-          className="font-display text-lg font-bold tracking-tight text-lab-teal-dark sm:text-xl md:text-2xl"
+          className="flex items-baseline gap-1.5 font-display font-bold tracking-tight text-lab-teal-dark"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           transition={navSpring}
         >
-          CUEMATH
+          <span className="text-lg sm:text-xl md:text-2xl">DEEPRECALL</span>
+          <span className="text-[9px] font-semibold tracking-wide text-lab-teal/70 sm:text-[10px]">by Cuemath</span>
         </MotionLink>
 
         {/* center nav links — only marketing links when on homepage */}
