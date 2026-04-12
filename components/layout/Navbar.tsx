@@ -21,13 +21,11 @@ const navSpring = { type: 'spring' as const, stiffness: 420, damping: 28 };
 type NavbarProps = {
   onGetStarted?: () => void;
   onLogin?: () => void;
-  variant?: 'marketing' | 'studio';
 };
 
 export function Navbar({
   onGetStarted = () => {},
   onLogin = () => {},
-  variant = 'marketing',
 }: NavbarProps) {
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
@@ -36,13 +34,10 @@ export function Navbar({
   const userName = user?.displayName || user?.username || null;
 
   const isStudioRoute =
-    variant === 'studio' ||
     pathname === '/studio' ||
     pathname === '/profile' ||
     (pathname?.startsWith('/studio/') ?? false);
 
-  // when logged in: show marketing links only on homepage, no duplicate profile/studio in the nav
-  // when on studio/profile routes: show nothing in nav links (just the right-side buttons)
   const links = isLoggedIn
     ? (isStudioRoute ? [] : MARKETING_LINKS)
     : MARKETING_LINKS;
@@ -64,7 +59,6 @@ export function Navbar({
           <span className="text-[9px] font-semibold tracking-wide text-lab-teal/70 sm:text-[10px]">by Cuemath</span>
         </MotionLink>
 
-        {/* center nav links — only marketing links when on homepage */}
         {links.length > 0 && (
           <nav className="hidden items-center gap-1 md:flex md:gap-2">
             {links.map((l) => (
@@ -81,13 +75,10 @@ export function Navbar({
           </nav>
         )}
 
-        {/* right-side actions */}
         <div className="flex items-center gap-2">
           {loading ? (
-            /* loading skeleton */
             <div className="h-8 w-20 animate-pulse rounded-lg bg-lab-line/30" />
           ) : isLoggedIn ? (
-            /* logged-in: Studio button (on homepage) or Home button (on studio), profile pill, logout */
             <>
               {!isStudioRoute && (
                 <MotionLink
@@ -132,7 +123,6 @@ export function Navbar({
               </motion.button>
             </>
           ) : (
-            /* logged-out: Login + Sign Up */
             <>
               <motion.button
                 onClick={onLogin}
@@ -154,7 +144,6 @@ export function Navbar({
         </div>
       </div>
 
-      {/* mobile bottom nav — only show marketing links when not logged in */}
       {!isLoggedIn && links.length > 0 && (
         <nav className="flex flex-wrap justify-center gap-x-3 gap-y-1 border-t border-lab-line/60 px-4 py-2 md:hidden">
           {links.map((l) => (

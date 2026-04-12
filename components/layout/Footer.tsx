@@ -4,8 +4,8 @@ const COLS = [
   {
     title: 'ABOUT',
     links: [
-      ['About this service', '/#about-service'],
-      ['DeepRecall habits', '/#how-it-works'],
+      ['About DeepRecall', '/#about-service'],
+      ['How it works', '/#how-it-works'],
       ['FAQs', '/#faq'],
     ],
   },
@@ -20,8 +20,8 @@ const COLS = [
   {
     title: 'RESOURCES',
     links: [
-      ['How it works', '/#how-it-works'],
       ['Study tips', '/#faq'],
+      ['Spaced repetition', '/#how-it-works'],
       ['Cuemath', 'https://www.cuemath.com'],
     ],
   },
@@ -74,16 +74,12 @@ export function Footer() {
           <div>
             <p className="font-display text-xl font-bold text-lab-teal-dark">DEEPRECALL</p>
             <p className="mt-0.5 text-[10px] font-semibold tracking-wide text-lab-teal/60">by Cuemath</p>
-            <p className="mt-1 text-sm text-lab-soft">DeepRecall flashcard lab — personal progress & analytics</p>
+            <p className="mt-1 text-sm text-lab-soft">Smart flashcard lab — personal progress & analytics</p>
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-lab-soft">
             <span>© {new Date().getFullYear()} DeepRecall · A Cuemath learning project</span>
-            <Link href="/" className="underline hover:text-lab-teal-dark">
-              Home
-            </Link>
-            <Link href="/studio" className="underline hover:text-lab-teal-dark">
-              Studio
-            </Link>
+            <Link href="/" className="underline hover:text-lab-teal-dark">Home</Link>
+            <Link href="/studio" className="underline hover:text-lab-teal-dark">Studio</Link>
           </div>
         </div>
       </div>

@@ -1,24 +1,23 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Navbar } from '@/components/cuemath/Navbar';
-import { Footer } from '@/components/cuemath/Footer';
-import { AuthModal } from '@/components/cuemath/AuthModal';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
+import { AuthModal } from '@/components/home/AuthModal';
 import { useState, useEffect } from 'react';
 
-// practice page gets no chrome at all
-const NO_CHROME_ROUTES = ['/studio/practice/'];
+// pages where we suppress the full chrome
+const NO_CHROME = ['/studio/practice/'];
+// pages that still get Navbar but no Footer (e.g. auth flows)
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
 
-  // hide navbar/footer entirely on practice pages
-  const hideChrome = NO_CHROME_ROUTES.some((r) => pathname?.startsWith(r));
+  const hideChrome = NO_CHROME.some((r) => pathname?.startsWith(r));
 
-  if (hideChrome) return <>{children}</>;
-
+  // allow any child to open the auth modal via custom event
   useEffect(() => {
     const handler = (e: CustomEvent<'login' | 'signup'>) => {
       setAuthMode(e.detail);
@@ -27,6 +26,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('open-auth', handler as EventListener);
     return () => window.removeEventListener('open-auth', handler as EventListener);
   }, []);
+
+  if (hideChrome) return <>{children}</>;
 
   const openLogin = () => { setAuthMode('login'); setAuthOpen(true); };
   const openSignup = () => { setAuthMode('signup'); setAuthOpen(true); };

@@ -4,15 +4,16 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
-import { CueFlashcardSection } from '@/components/cuemath/CueFlashcardSection';
+import { CueFlashcardSection } from '@/components/home/CueFlashcardSection';
 import { StreakBanner } from '@/components/ui/BadgeDisplay';
 import type { UserStreakPayload } from '@/lib/streaks';
 import { SlideCtaLink } from '@/components/ui/SlideCtaButton';
 import { useAuth } from '@/hooks/useAuth';
-import { HeroSection } from '@/components/cuemath/HeroSection';
-import { FeaturesSection } from '@/components/cuemath/FeaturesSection';
-import { FaqSection } from '@/components/cuemath/FaqSection';
-  {
+import { HeroSection } from '@/components/home/HeroSection';
+import { FeaturesSection } from '@/components/home/FeaturesSection';
+import { FaqSection } from '@/components/home/FaqSection';
+
+
 function HomeInner() {
   const { user, loading: authLoading } = useAuth();
   const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
