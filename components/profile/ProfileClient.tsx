@@ -29,14 +29,32 @@ const fade = {
   show: { opacity: 1, y: 0 },
 };
 
-// random avatar emojis — pick a stable one based on username
-const AVATAR_EMOJIS = ['🧒', '👦', '👧', '🧒🏽', '👦🏻', '👧🏾', '🦊', '🐼', '🐨', '🦁', '🐸', '🐯', '🦄', '🐙', '🐳'];
+// deterministic emoji avatar based on username hash
+const AVATAR_EMOJIS = ['🦁', '🐯', '🦊', '🐼', '🐨', '🦄', '🐙', '🐳', '🦋', '🦚', '🦜', '🐬', '🐸', '🦝', '🐺'];
 
 function pickAvatar(name: string | undefined): string {
-  if (!name) return '🧒';
+  if (!name) return '🦁';
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
   return AVATAR_EMOJIS[Math.abs(hash) % AVATAR_EMOJIS.length];
+}
+
+// colorful header gradients — pick one based on username
+const HEADER_GRADIENTS = [
+  'from-violet-500 via-purple-600 to-indigo-700',
+  'from-rose-400 via-pink-500 to-fuchsia-600',
+  'from-amber-400 via-orange-500 to-red-500',
+  'from-cyan-400 via-teal-500 to-blue-600',
+  'from-emerald-400 via-green-500 to-teal-600',
+  'from-indigo-500 via-blue-600 to-cyan-500',
+  'from-fuchsia-500 via-pink-500 to-rose-500',
+];
+
+function pickGradient(name: string | undefined): string {
+  if (!name) return HEADER_GRADIENTS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+  return HEADER_GRADIENTS[Math.abs(hash) % HEADER_GRADIENTS.length];
 }
 
 export function ProfileClient({ displayName, childName, grade, username }: ProfileClientProps) {
@@ -46,23 +64,23 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/me/analytics', { credentials: 'include' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to load analytics');
-      setAnalytics(json.analytics);
+      const [analyticsRes, streakRes] = await Promise.all([
+        fetch('/api/me/analytics', { credentials: 'include' }),
+        fetch('/api/me/streak', { credentials: 'include' }),
+      ]);
+      const analyticsJson = await analyticsRes.json();
+      if (!analyticsRes.ok) throw new Error(analyticsJson.error || 'Failed to load analytics');
+      setAnalytics(analyticsJson.analytics);
+
+      const streakJson = await streakRes.json();
+      if (streakJson.streak) setStreakData(streakJson.streak);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load');
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-    fetch('/api/me/streak', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => { if (d.streak) setStreakData(d.streak); })
-      .catch(() => {});
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   const chartData =
     analytics?.last7Days.map((d) => ({
@@ -74,26 +92,27 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
 
   const firstName = displayName?.split(' ')[0] ?? 'Learner';
   const avatar = pickAvatar(username);
+  const gradient = pickGradient(username);
 
   return (
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
       <main className="mx-auto max-w-4xl px-5 py-8 text-[1.0625rem] leading-relaxed sm:px-8 sm:py-12">
 
-        {/* ── Profile header card ── */}
+        {/* ── 1. USER INFO ── */}
         <motion.header
           initial="hidden"
           animate="show"
           variants={fade}
           transition={{ duration: 0.35 }}
-          className="relative overflow-hidden rounded-2xl border border-lab-line/80 bg-white/95 shadow-sm backdrop-blur-sm"
+          className="relative overflow-hidden rounded-2xl border border-lab-line/80 bg-white/95 shadow-md backdrop-blur-sm"
         >
-          {/* teal gradient accent strip */}
-          <div className="h-24 bg-gradient-to-r from-lab-teal via-lab-teal-dark to-emerald-700" />
+          {/* colorful gradient accent strip — changes per user */}
+          <div className={`h-28 bg-gradient-to-r ${gradient}`} />
 
           <div className="px-6 pb-6 sm:px-8 sm:pb-8">
             {/* avatar overlaps the accent strip */}
             <div className="-mt-10 mb-4 flex items-end gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-lab-mint text-4xl shadow-md">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-white text-4xl shadow-lg">
                 {avatar}
               </div>
               <div className="mb-1">
@@ -106,15 +125,15 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
               </div>
             </div>
 
-            {/* user details in compact chips */}
+            {/* user detail chips */}
             <div className="flex flex-wrap gap-2 text-sm">
               {childName && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-lab-mint/60 px-3 py-1 font-medium text-lab-teal-dark">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 font-medium text-violet-700">
                   🧒 {childName}
                 </span>
               )}
               {grade && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
                   📚 Grade {grade}
                 </span>
               )}
@@ -133,58 +152,68 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
           </div>
         </motion.header>
 
-        {/* ── Streak banner ── */}
-        {streakData && (
-          <motion.section
-            className="mt-8"
-            initial="hidden"
-            animate="show"
-            variants={fade}
-            transition={{ duration: 0.4, delay: 0.05 }}
-          >
-            <StreakBanner data={streakData} />
-          </motion.section>
-        )}
-
-        {/* ── Badges ── */}
-        {streakData && streakData.badges.length > 0 && (
-          <motion.section
-            className="mt-8"
-            initial="hidden"
-            animate="show"
-            variants={fade}
-            transition={{ duration: 0.4, delay: 0.08 }}
-          >
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-xl">🏅</span>
-              <h2 className="font-display text-lg font-bold text-lab-ink">Your Badges</h2>
-              <span className="rounded-full bg-lab-teal/10 px-2.5 py-0.5 text-xs font-bold text-lab-teal">
-                {streakData.badges.length}
+        {/* ── 2. STREAK SECTION ── */}
+        <motion.section
+          className="mt-8"
+          initial="hidden"
+          animate="show"
+          variants={fade}
+          transition={{ duration: 0.4, delay: 0.05 }}
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            <h2 className="font-display text-lg font-bold text-lab-ink">Streak</h2>
+            {streakData && (
+              <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-700">
+                {streakData.currentStreak} days
               </span>
-            </div>
-            <BadgeWall badges={streakData.badges} />
-          </motion.section>
-        )}
+            )}
+          </div>
 
-        {streakData && streakData.badges.length === 0 && (
-          <motion.section
-            className="mt-8"
-            initial="hidden"
-            animate="show"
-            variants={fade}
-            transition={{ duration: 0.4, delay: 0.08 }}
-          >
-            <BadgeWall badges={[]} />
-          </motion.section>
-        )}
+          {streakData ? (
+            <StreakBanner data={streakData} />
+          ) : (
+            /* skeleton while loading */
+            <div className="animate-pulse h-36 rounded-2xl bg-slate-100/80" />
+          )}
+        </motion.section>
 
-        {/* ── Analytics section — ALWAYS VISIBLE, no click/hover needed ── */}
+        {/* ── 3. BADGES SECTION ── */}
+        <motion.section
+          className="mt-10"
+          initial="hidden"
+          animate="show"
+          variants={fade}
+          transition={{ duration: 0.4, delay: 0.08 }}
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xl">🏅</span>
+            <h2 className="font-display text-lg font-bold text-lab-ink">Badges</h2>
+            {streakData && streakData.badges.length > 0 && (
+              <span className="rounded-full bg-lab-teal/10 px-2.5 py-0.5 text-xs font-bold text-lab-teal">
+                {streakData.badges.length} earned
+              </span>
+            )}
+          </div>
+
+          {streakData ? (
+            streakData.badges.length === 0 ? (
+              <MotivationalEmptyBadges currentStreak={streakData.currentStreak} nextBadge={streakData.nextBadge} />
+            ) : (
+              <BadgeWall badges={streakData.badges} />
+            )
+          ) : (
+            <div className="animate-pulse h-32 rounded-2xl bg-slate-100/80" />
+          )}
+        </motion.section>
+
+        {/* ── 4. ANALYTICS SECTION ── */}
         <motion.section
           className="mt-10 rounded-2xl border border-lab-line/70 bg-white/95 p-6 shadow-sm backdrop-blur-sm sm:p-8"
           initial="hidden"
           animate="show"
           variants={fade}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.12 }}
         >
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -202,12 +231,10 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
           </div>
 
           {error && (
-            <p className="mt-6 text-sm text-red-600" role="alert">
-              {error}
-            </p>
+            <p className="mt-6 text-sm text-red-600" role="alert">{error}</p>
           )}
 
-          {/* loading skeleton while fetching analytics */}
+          {/* loading skeleton */}
           {!analytics && !error && (
             <div className="mt-8 animate-pulse space-y-6">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -222,41 +249,21 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
 
           {analytics && (
             <>
-              {/* top stat cards — always visible */}
+              {/* stat cards */}
               <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatCard
-                  icon={<Target className="h-5 w-5 text-emerald-600" />}
-                  label="Mastered"
-                  value={analytics.cardsMastered}
-                  accent="emerald"
-                />
-                <StatCard
-                  icon={<Layers className="h-5 w-5 text-teal-600" />}
-                  label="Reviews"
-                  value={analytics.totalReviews}
-                  accent="teal"
-                />
-                <StatCard
-                  icon={<Flame className="h-5 w-5 text-orange-500" />}
-                  label="Due now"
-                  value={analytics.cardsDue}
-                  accent="orange"
-                />
-                <StatCard
-                  icon={<BookOpen className="h-5 w-5 text-indigo-500" />}
-                  label="Decks"
-                  value={analytics.decksOwned}
-                  accent="indigo"
-                />
+                <StatCard icon={<Target className="h-5 w-5 text-emerald-600" />} label="Mastered" value={analytics.cardsMastered} accent="emerald" />
+                <StatCard icon={<Layers className="h-5 w-5 text-teal-600" />} label="Reviews" value={analytics.totalReviews} accent="teal" />
+                <StatCard icon={<Flame className="h-5 w-5 text-orange-500" />} label="Due now" value={analytics.cardsDue} accent="orange" />
+                <StatCard icon={<BookOpen className="h-5 w-5 text-indigo-500" />} label="Decks" value={analytics.decksOwned} accent="indigo" />
               </div>
 
-              {/* secondary stats row */}
+              {/* mini stats */}
               <div className="mt-4 flex flex-wrap gap-3">
                 <MiniStat label="On-track taps" value={analytics.easyTotal} color="text-emerald-600" />
                 <MiniStat label="Needs practice" value={analytics.hardTotal} color="text-orange-600" />
               </div>
 
-              {/* 7-day chart */}
+              {/* 7-day bar chart */}
               <div className="mt-8">
                 <p className="text-sm font-semibold text-zinc-800">Last 7 days</p>
                 <div className="mt-3 h-52 w-full" style={{ minWidth: 200, minHeight: 200 }}>
@@ -266,11 +273,7 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
                       <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#64748b" />
                       <Tooltip
-                        contentStyle={{
-                          borderRadius: 12,
-                          border: '1px solid #e4e4e7',
-                          fontSize: 13,
-                        }}
+                        contentStyle={{ borderRadius: 12, border: '1px solid #e4e4e7', fontSize: 13 }}
                       />
                       <Bar dataKey="easy" stackId="a" fill="#0f766e" name="On track" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="hard" stackId="a" fill="#f97316" name="Practice more" radius={[4, 4, 0, 0]} />
@@ -315,10 +318,7 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
                     <li className="text-sm text-lab-soft">Practice a few decks to see standouts here.</li>
                   ) : (
                     analytics.topCards.map((c) => (
-                      <li
-                        key={c.id}
-                        className="rounded-xl border border-lab-line/50 bg-lab-mint/30 px-4 py-3 text-sm leading-snug"
-                      >
+                      <li key={c.id} className="rounded-xl border border-lab-line/50 bg-lab-mint/30 px-4 py-3 text-sm leading-snug">
                         <span className="font-medium text-lab-ink line-clamp-2">{c.question}</span>
                         <span className="mt-1 block text-xs text-lab-soft">
                           {c.deckTitle} · <strong className="text-lab-teal-dark">{c.easyCount}</strong> easy ·{' '}
@@ -367,12 +367,58 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
   );
 }
 
+/* ── Motivational empty-badges card ── */
+const MOTIVATIONAL_QUOTES = [
+  "Every expert was once a beginner. Start your streak today! 🌱",
+  "Small steps every day lead to massive results. Practice once and begin! 💪",
+  "The journey of a thousand miles starts with a single step. Open a deck! 🚀",
+  "Champions train every day. Your first badge is just 3 days away! 🏅",
+  "Consistency beats talent. Show up today and earn your first badge! ⭐",
+];
+
+function MotivationalEmptyBadges({
+  currentStreak,
+  nextBadge,
+}: {
+  currentStreak: number;
+  nextBadge: UserStreakPayload['nextBadge'];
+}) {
+  const quote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+  const daysToNext = nextBadge ? nextBadge.streak - currentStreak : 3;
+
+  return (
+    <motion.div
+      className="rounded-2xl border-2 border-dashed border-violet-200 bg-gradient-to-br from-violet-50 via-indigo-50 to-blue-50 py-10 px-6 text-center"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <motion.span
+        className="block text-5xl"
+        animate={{ y: [0, -8, 0], rotate: [0, 10, -10, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        🎖️
+      </motion.span>
+      <p className="mt-4 font-display text-base font-bold text-indigo-700">No badges yet — but you&apos;re on your way!</p>
+      <p className="mx-auto mt-2 max-w-xs text-sm text-indigo-500 italic">&ldquo;{quote}&rdquo;</p>
+      {nextBadge && (
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/90 border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm">
+          <span>{nextBadge.emoji}</span>
+          <span>
+            {daysToNext <= 0
+              ? `Practice today to earn "${nextBadge.title}"!`
+              : `${daysToNext} more day${daysToNext !== 1 ? 's' : ''} to earn "${nextBadge.title}"`}
+          </span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 /* ── Stat card with icon ── */
 function StatCard({
-  icon,
-  label,
-  value,
-  accent,
+  icon, label, value, accent,
 }: {
   icon: React.ReactNode;
   label: string;
