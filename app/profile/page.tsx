@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth-session';
-import { ProfileClient } from '@/components/profile/ProfileClient';
+import { ProfileClientBento } from '@/components/profile/ProfileClientBento';
 
 export const metadata: Metadata = {
   title: 'Your profile',
@@ -15,7 +15,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <ProfileClient
+    <ProfileClientBento
       displayName={user.displayName ?? ''}
       childName={user.childName}
       grade={user.grade}
