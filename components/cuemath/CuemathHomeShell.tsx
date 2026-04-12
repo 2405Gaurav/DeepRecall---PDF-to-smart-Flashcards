@@ -54,7 +54,7 @@ const FAQ = [
 
 function HomeInner() {
   const searchParams = useSearchParams();
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
@@ -86,9 +86,6 @@ function HomeInner() {
       <Navbar
         onGetStarted={openSignup}
         onLogin={openLogin}
-        isLoggedIn={isLoggedIn}
-        userName={user?.displayName || user?.username || null}
-        onLogout={logout}
       />
       <AuthModal
         open={authOpen}

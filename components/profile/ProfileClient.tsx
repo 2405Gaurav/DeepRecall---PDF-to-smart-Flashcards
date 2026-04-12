@@ -197,6 +197,26 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
             </p>
           )}
 
+          {!analytics && !error && (
+            <div className="mt-8 animate-pulse space-y-8">
+              {/* skeleton: big mastered number */}
+              <div className="h-32 w-full rounded-2xl bg-slate-100/80"></div>
+              
+              {/* skeleton: stat grid */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-20 rounded-xl bg-slate-100/80"></div>
+                ))}
+              </div>
+
+              {/* skeleton: chart */}
+              <div className="space-y-3">
+                <div className="h-4 w-24 bg-slate-200/60 rounded"></div>
+                <div className="h-52 w-full rounded-xl bg-slate-100/80"></div>
+              </div>
+            </div>
+          )}
+
           {analytics && (
             <>
               {/* big mastered number */}
