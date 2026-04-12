@@ -1,13 +1,34 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CreateFlashcardsModal } from '@/components/studio/CreateFlashcardsModal';
 import { UploadLoader } from '@/components/ui/CueMathLoader';
 import type { CardCountPreset } from '@/lib/gemini';
 
 const MAX_BYTES = 12 * 1024 * 1024;
+
+/** Translate scary API errors into child-friendly messages */
+function friendlyError(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes('429') || lower.includes('quota') || lower.includes('rate'))
+    return 'Oops! Our brain helper is taking a little break. Try again in a minute! ☕';
+  if (lower.includes('timeout') || lower.includes('timed out'))
+    return 'That took too long — our helpers got tired! Try a smaller PDF or try again. ⏳';
+  if (lower.includes('connection') || lower.includes('network') || lower.includes('fetch'))
+    return 'Hmm, we lost connection for a second. Check your internet and try again! 📡';
+  if (lower.includes('too few') || lower.includes('not enough') || lower.includes('extract enough'))
+    return 'We couldn\u2019t find enough text in that PDF. Try a different file with more words! 📝';
+  if (lower.includes('encrypted') || lower.includes('image-only') || lower.includes('could not read'))
+    return 'This PDF is locked or has only pictures. Try one with regular text! 🔒';
+  if (lower.includes('sign in') || lower.includes('onboarding') || lower.includes('401'))
+    return 'You need to sign in first! Go to the home page and click Get Started. 🚀';
+  if (lower.includes('json') || lower.includes('generation failed'))
+    return 'Our card maker got a little confused. Try uploading again! 🔄';
+  // fallback — still keep it friendly
+  return 'Something didn\u2019t work quite right. Give it another try! 💪';
+}
 
 interface StudioUploadFormProps {
   onSuccess?: () => void;
@@ -105,7 +126,8 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
         onSuccess?.();
         router.push(`/studio/deck/${data.deck.id}`);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed');
+        const raw = err instanceof Error ? err.message : 'Upload failed';
+        setError(friendlyError(raw));
       } finally {
         clearInterval(tick);
         setIsUploading(false);
@@ -187,9 +209,16 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
       </div>
 
       {error && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="mt-4 rounded-2xl border-2 border-amber-200 bg-amber-50 p-5 text-center">
+          <p className="text-3xl">😅</p>
+          <p className="mt-2 text-base font-bold text-amber-800">{error}</p>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="mt-3 rounded-full bg-amber-200 px-4 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-300 transition"
+          >
+            Okay, got it!
+          </button>
         </div>
       )}
 
