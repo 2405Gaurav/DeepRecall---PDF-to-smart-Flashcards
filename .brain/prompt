@@ -1,9 +1,29 @@
-For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.
+# Cursor / Opus — project rules (production bar)
 
-When using client-side hooks (useState and useEffect) in a component that's being treated as a Server Component by Next.js, always add the "use client" directive at the top of the file.
+These sit in `.brain/` on purpose (How To AI style: **files = memory**, not just chat).
 
-Do not write code that will trigger this error: "Warning: Extra attributes from the server: %s%s""class,style"
+## Build quality
+- Ship UI that looks intentional: spacing, type scale, states (loading / empty / error), keyboard hints where it matters.
+- Prefer matching existing patterns in the repo (imports, Tailwind tokens like `lab-*`, client vs server boundaries).
 
-By default, this template supports JSX syntax with Tailwind CSS classes, the shadcn/ui library, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.
+## Next.js / React
+- Any file using `useState`, `useEffect`, browser APIs, or event handlers must start with **`use client`**.
+- Don’t pass **functions** from Server Components into Client Components (e.g. Navbar `onGetStarted` from a server page). Use optional client defaults or a tiny client wrapper.
 
-Use icons from lucide-react for logos.
+## Styling
+- Default stack: Tailwind, shadcn/ui, **lucide-react** for icons. Don’t add random icon packs unless I ask.
+- Avoid hydration noise: be careful with random IDs or mismatched attributes that trigger “Extra attributes from the server” warnings.
+
+## Data / Prisma
+- After schema changes, remind me: **migrate + generate** (Windows EPERM if dev server locks Prisma engine).
+- Use `lib/db-enums.ts` string literals for mastery / review enums in queries when Prisma enums might be undefined at runtime.
+
+## Security
+- Treat `.env` as out of scope for edits; never commit secrets. `.brain/ignore` lists env files.
+
+## How I want you to work
+- I describe **WHAT** (screen, flow, copy tone). You propose **HOW** (files, APIs, components).
+- If I paste a terminal stack trace, fix forward — don’t only theorise.
+
+## shadcn
+- Leave `components/ui/*` and `hooks/use-toast.ts` alone unless we’re deliberately upgrading primitives (see `.brain/ignore`).
