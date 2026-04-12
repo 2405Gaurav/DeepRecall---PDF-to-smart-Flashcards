@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                    String      @id @default(uuid()) @db.Uuid
+  email                 String?     @unique
+  phone                 String?     @unique
+  displayName           String?     @map("display_name")
+  childName             String?     @map("child_name")
+  grade                 String?
+  onboardingCompletedAt DateTime?   @map("onboarding_completed_at")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  decks                 Deck[]
+  reviewLogs            ReviewLog[]
+
+  @@map("users")
+}
+
+model Deck {
+  id         String      @id @default(uuid()) @db.Uuid
+  title      String
+  createdAt  DateTime    @default(now()) @map("created_at")
+  userId     String?     @map("user_id") @db.Uuid
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  flashcards Flashcard[]
+
+  @@map("decks")
+}
+
+model Flashcard {
+  id           String      @id @default(uuid()) @db.Uuid
+  question     String
+  answer       String
+  cardType     CardType    @default(CONCEPT) @map("card_type")
+  difficulty   Difficulty  @default(NONE)
+  interval     Int         @default(1)
+  nextReview   DateTime    @default(now()) @map("next_review")
+  lastReviewed DateTime?   @map("last_reviewed")
+  easyCount    Int         @default(0) @map("easy_count")
+  hardCount    Int         @default(0) @map("hard_count")
+  deckId       String      @map("deck_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at")
+  deck         Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviewLogs   ReviewLog[]
+
+  @@index([deckId])
+  @@index([deckId, nextReview])
+  @@map("flashcards")
+}
+
+model ReviewLog {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  flashcardId String        @map("flashcard_id") @db.Uuid
+  outcome     ReviewOutcome
+  createdAt   DateTime      @default(now()) @map("created_at")
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard   Flashcard     @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([flashcardId])
+  @@map("review_logs")
+}
+
+enum Difficulty {
+  NONE
+  EASY
+  HARD
+}
+
+enum CardType {
+  CONCEPT
+  DEFINITION
+  EXAMPLE
+}
+
+enum ReviewOutcome {
+  EASY
+  HARD
+}
