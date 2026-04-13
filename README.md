@@ -1,206 +1,203 @@
-# DeepRecall — Cuemath Flashcard Engine
+<div align="center">
 
-> **Problem 1: The Flashcard Engine** — AI Builder Challenge
+# 🧠 DeepRecall
+### *by Cuemath — AI Builder Challenge, Problem 1: The Flashcard Engine*
 
-A flashcard app that turns **any PDF** into a smart, practice-ready deck of flashcards. Drop in a chapter on quadratic equations or class notes on the French Revolution — get back a clean set of cards written like a great teacher would write them. Then practice with spaced repetition, earn streak badges, and watch your mastery grow.
+**Turn any PDF into a smart, practice-ready flashcard deck.**  
+Active recall · Spaced repetition · Streaks · Badges · Delight.
 
-## ✨ What makes this special
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20App-0f766e?style=for-the-badge)](https://deeprecall.netlify.app)
+[![Tech Stack](https://img.shields.io/badge/Next.js%2015-App%20Router-black?style=for-the-badge&logo=next.js)](./TECHNICAL.md)
+[![AI Built](https://img.shields.io/badge/Built%20with-Antigravity%20AI-6d28d9?style=for-the-badge)](https://github.com)
 
-### 1. Ingestion Quality
-PDFs become **recall-heavy questions** — concepts, definitions, relationships, edge cases, worked examples. Not shallow trivia. Three presets:
-- **Light** (6-12 cards) — quick review
-- **Balanced** (15-28 cards) — recommended for most chapters
-- **Deep** (30-50 cards) — comprehensive coverage
-
-### 2. Spaced Repetition (SM-2 Inspired)
-Cards you nail show up later. Cards you struggle with return sooner. The algorithm uses growing intervals: 1 day → 3 days → 7 days → 14 days → 30 days. Four mastery levels: NEW → LEARNING → FAMILIAR → MASTERED.
-
-### 3. Progress & Mastery
-Every deck shows what you've mastered, what's shaky, and what's coming up for review. Profile page has analytics charts, top cards, and recent activity.
-
-### 4. Deck Management at Scale
-Search, sort (due first, then last practiced), emoji mastery indicators, and it works for dozens of decks.
-
-### 5. Streaks, Badges & Milestones 🏆
-Daily practice streaks tracked in the database. Earn badges at 3, 5, 7, 10, 15, 21, 30, 50, and 100-day milestones. Full-screen celebrations when a new badge is earned. Trophy wall on your profile.
-
-### 6. Delight 🎉
-3D card flips, confetti bursts on mastery, animated mascot reactions, floating emoji particles, rainbow progress bars, an animated loader with rotating study tips, and bouncy micro-interactions everywhere. Because flashcard apps don't have to be boring.
+</div>
 
 ---
 
-## 🚀 Quick Start
+## ✨ What is DeepRecall?
 
-### Prerequisites
-- Node.js 20+
-- A [Neon](https://neon.tech) PostgreSQL database
-- A [Gemini API key](https://aistudio.google.com/apikey)
+Most students study by **passively re-reading notes**. That doesn't work.
 
-### Setup
+DeepRecall flips the script — drop in a PDF (a chapter on quadratic equations, French Revolution notes, biology diagrams) and get back a **teacher-quality flashcard deck** that schedules itself. Cards you nail fade away. Cards you struggle with come back sooner.
 
-```bash
-cd project
-npm install
-```
-
-Copy `.env.example` to `.env` and fill in:
-
-```env
-DATABASE_URL=postgresql://user:password@your-neon-host.neon.tech/neondb?sslmode=require
-DIRECT_URL=postgresql://user:password@your-neon-host.neon.tech/neondb?sslmode=require
-GEMINI_API_KEY=your-gemini-api-key-here
-```
-
-Push schema to database:
-
-```bash
-npm run db:push
-```
-
-Run the dev server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000)
+> North star: **Long-term retention over short-term cramming.**
 
 ---
 
-## 🏗️ Architecture
+## 🖼️ Feature Showcase
+
+| Landing Page | Practice Session |
+|---|---|
+| Interactive feature demo, floating particles, hero animations | 3D card flip, streak counter, mascot reactions, confetti bursts |
+
+| Profile Dashboard | Studio Upload |
+|---|---|
+| Analytics charts, streak banner, trophy wall, struggle cards | PDF drag-drop, 3 card presets, AI progress loader |
+
+<div align="center">
+
+![Teacher-quality flashcards](./public/images/child-flashcards.png)
+*AI-generated cards that feel written by a great teacher, not scraped by a bot*
+
+</div>
+
+---
+
+## 🚀 Core Features
+
+### 📄 Ingestion — PDF → Smart Flashcards
+- Drop any text-based PDF and let **Google Gemini** extract it into comprehensive cards
+- **3 quality presets**: Light (6–12 cards), Balanced (15–28), Deep (30–50)
+- Cards cover: key concepts, definitions, relationships, edge cases, worked examples
+- Not shallow bullet dumps — teacher-quality, recall-heavy questions
+
+### 🔁 Spaced Repetition (SM-2 Inspired)
+- Four mastery levels: `NEW → LEARNING → FAMILIAR → MASTERED`
+- Growing review intervals: 1d → 3d → 7d → 14d → 30d
+- Most overdue cards always surface first in the practice queue
+- Easy cards fast-track to mastered; hard cards reset and return sooner
+
+### 🎮 Practice Session — The Crown Jewel
+- **3D card flip** — CSS perspective transform reveals the answer cinematically
+- **3 outcome buttons**: 😅 Hard / 🤔 OK / ✅ Easy — simple enough for kids
+- **Live streak counter** with escalating messages: *"🔥 Nice!" → "🚀 Unstoppable!" → "✨ PERFECT RUN!"*
+- **Mascot emoji** reacts to performance (😄 happy, 🤔 thinking, 🥳 celebrating)
+- **Confetti burst** on deck completion and badge unlocks
+- **Rainbow progress bar** — turns full rainbow at 100%
+- **Session summary** with animated stats, best streak, and mastery breakdown
+
+### 🔥 Streaks & 🏅 Badges
+- Daily practice streaks tracked in the database (per-day, not per-card — no spam incentive)
+- **9 streak milestone badges**: 3, 5, 7, 10, 15, 21, 30, 50, 100 days
+- **4 total-days badges**: 25, 50, 100, 200 total practice days
+- Badges are **permanent** — never revoked even if streak breaks (encouraging, not punishing)
+- Full-screen badge celebration popup when a new milestone is hit
+- "Next badge in X days" progress indicator keeps kids motivated
+
+### 📊 Profile & Analytics
+- Bar chart of reviews for the last 7 days (easy vs. hard split)
+- Mastered / Reviews / Due Now / Decks stat cards
+- **Struggle cards** — your hardest 5 cards across all decks
+- **Strongest cards** — your personal hero cards
+- Recent activity feed with outcomes
+- Full streak banner + badge trophy wall
+
+### 🗂️ Deck Management
+- Browse all decks with mastery emoji indicators (🚀 → 📈 → 💪 → 🌟 → 🏆)
+- Animated progress ring per deck
+- Paginated card list with show/hide answers toggle
+- Reset individual cards back to NEW
+- Delete deck (with confirmation)
+
+---
+
+## 🎁 Bonus Features
+
+| Feature | What it does |
+|---|---|
+| 🎊 **Confetti system** | Colorful shapes (circles, stars, squares) fire on mastery & completion |
+| 🌊 **Floating particles** | Ambient emoji particles (📘✨🧠⭐) drift across the hero section |
+| 🌈 **Rainbow progress** | Progress bar transforms to rainbow gradient at 100% |
+| ⬆️ **Upload loader** | Rotating tips & stage messages while Gemini processes your PDF |
+| 🔔 **Empty-state motivation** | Joyful gradient cards with motivational quotes when no streak/badge yet |
+| 💤 **Lazy-loaded charts** | Recharts only loads when you scroll to the analytics section |
+| 🧩 **Modular architecture** | `studio/ui/`, `profile/ui/` sub-component folders with barrel exports |
+| 🌀 **CueMathLoader** | Consistent animated loader (cycling emojis + rotating tips) across all loading states |
+| 🌐 **Responsive design** | Works on mobile, tablet, and desktop |
+| 🔐 **Session auth** | httpOnly JWT cookies — no OAuth complexity, friendlier for kids |
+| 🌱 **DB seed script** | `npm run db:seed` — seeds test user with 16-day streak + 2 badges |
+
+---
+
+## 🤖 How I Used AI to Build This
+
+### The Tool: Antigravity + Claude Opus
+
+I didn't have access to **Claude Code** (the tool described in the How-To-AI guide), so I built using **Antigravity** — a similar agentic AI assistant powered by Claude Opus 4.6 — that runs alongside my editor and can read/write files, run terminal commands, and build features through conversation.
+
+The core principle from the guide applied perfectly:
+
+> **You focus on WHAT. Claude figures out the HOW.**
+
+I described what I wanted. Antigravity figured out the architecture, wrote the components, debugged the errors, and kept the codebase consistent.
+
+### The `.brain` Folder — My Second Brain
+
+The How-To-AI guide talks about creating a **Brain folder** — a local knowledge base of markdown files that the AI reads every session so it never starts from zero. I built my own `.brain/` folder inside the project:
 
 ```
-User Flow:
-  Home → Onboarding (name, grade) → Studio
-    ↓
-  Upload PDF → Gemini generates cards → Saved to PostgreSQL
-    ↓
-  Practice Session (SR queue) → Review logged → Streak updated → Badge check
-    ↓
-  Profile (analytics, streak banner, badge wall)
+.brain/
+├── context.md          ← Living product context: what it is, principles, stack, schema, decisions
+├── prompts-journal.md  ← Build log: what was tried, what broke, tradeoffs, what I'd improve
+├── config.json         ← Persistent AI assistant configuration
+├── prompt              ← System prompt for the AI
+└── README.md           ← How to use the brain folder
 ```
 
-### Tech Stack
+**`context.md`** is the equivalent of the guide's *about-me.md* + *my-goals.md* + product brief — I updated it each session as scope shifted. Antigravity reads it at the start of every conversation so it has full context without re-explanation.
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Animation | Framer Motion |
-| Database | Prisma + PostgreSQL (Neon serverless) |
-| AI | Google Gemini API |
-| Charts | Recharts |
-| PDF Parsing | pdf-parse |
+**`prompts-journal.md`** documents every session: what was built, what broke, tradeoffs made, algorithm decisions, what I'd do differently. This is the "process thinking" artifact the challenge asks for.
 
-### Database Schema
+This gave me the same superpower the guide describes:
+> *Your local files ARE the AI's memory. The better you organize them, the smarter Claude becomes.*
 
-| Model | Purpose |
-|-------|---------|
-| `User` | Auth, profile, streak tracking (currentStreak, longestStreak, lastPracticeDate, totalPracticeDays) |
-| `Badge` | Earned achievements — slug, title, emoji, description. Unique per user+slug. |
-| `Deck` | Card collection from a PDF. Belongs to a user. |
-| `Flashcard` | Individual card with SR fields: interval, nextReview, masteryLevel, easyCount/hardCount |
-| `ReviewLog` | Every review outcome logged for analytics |
-
----
-
-## 📡 API Routes
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/api/upload` | PDF → extract text → Gemini → deck + cards |
-| `GET` | `/api/decks` | List decks with stats (due, mastered, in progress) |
-| `GET` | `/api/decks/[id]` | Deck metadata + stats |
-| `GET` | `/api/decks/[id]/review` | Due or all cards, sorted for SRS |
-| `GET` | `/api/decks/[id]/cards` | All cards for a deck |
-| `PATCH` | `/api/flashcard/[id]` | Review outcome + streak update + badge check |
-| `GET` | `/api/me/session` | Current user session |
-| `GET` | `/api/me/analytics` | User analytics (reviews, mastery, top cards) |
-| `GET` | `/api/me/streak` | Streak data + earned badges |
-| `POST` | `/api/onboarding` | Complete onboarding (name, grade, child) |
-
----
-
-## 🔐 Security
-
-- `.env.example` contains **only placeholder values** — no real keys
-- `.env` is in `.gitignore` — never committed
-- API keys are **server-side only** — browser never sees them
-- Session cookies are `httpOnly`
-- Deck ownership checks on all API routes
-
----
-
-## 🎨 Key Decisions & Tradeoffs
-
-1. **SM-2 inspired, not full SM-2** — Four simple mastery levels instead of quality grades 0-5. Kids understand 3 buttons better than a 6-point scale.
-
-2. **Session cookies over OAuth** — For a children's app, a friendly onboarding modal beats Google login friction. Trade: no cross-device sync (acceptable for v1).
-
-3. **Gemini over OpenAI** — Generous free tier, good instruction following for structured card generation.
-
-4. **Three presets over free-form count** — Guides users toward quality. "500 cards" would give shallow results.
-
-5. **Streak tracking per-day, not per-card** — Can't game it by reviewing the same card 100 times. Must come back tomorrow.
-
-6. **Non-blocking streak updates** — If the streak DB write fails, the card save still succeeds. Streaks are nice-to-have; card progress is critical.
-
----
-
-## 🔮 What I'd Improve With More Time
-
-1. **OTP verification** — Currently accepts dummy phone numbers
-2. **Sound effects** — "Ding" on correct, "whoosh" on card flip
-3. **Card editing** — Let users modify AI-generated cards
-4. **Dark mode** — Neon-style animations for teen users
-5. **PWA** — Install on phone, offline card review
-6. **Multi-PDF decks** — Merge multiple PDFs into one deck
-7. **Export** — CSV or Anki-compatible format
-8. **Collaborative decks** — Share between classmates
-9. **Achievement system v2** — XP points, daily challenges, leaderboards
-
----
-
-## 📁 Project Structure
+### The Build Flow
 
 ```
-project/
-├── app/                    # Next.js App Router pages & API routes
-│   ├── api/               # All API endpoints
-│   ├── studio/            # Studio pages (upload, deck view, practice)
-│   └── profile/           # User profile & analytics
-├── components/
-│   ├── cuemath/           # Homepage, navbar, footer, onboarding
-│   ├── studio/            # Upload form, practice session, deck client
-│   ├── profile/           # Profile analytics client
-│   └── ui/                # Shared UI (loader, confetti, badges, particles)
-├── lib/                   # Core logic
-│   ├── spaced-repetition.ts  # SM-2 inspired algorithm
-│   ├── streaks.ts            # Streak tracking & badge awarding
-│   ├── gemini.ts             # Card generation prompts
-│   └── user-analytics.ts     # Analytics queries
-├── prisma/
-│   └── schema.prisma      # Database schema
-├── public/images/         # AI-generated illustrations
-└── .brain/                # Process thinking documentation
-    ├── context.md         # Product context & architecture notes
-    └── prompts-journal.md # Build process log
+Session 1: Foundation
+  → Architecture, auth, PDF upload, Gemini integration, Prisma schema
+
+Session 2: Spaced Repetition
+  → SM-2 algorithm, practice queue, review logging, profile analytics
+
+Session 3: Delight Overhaul
+  → 3D card flip, confetti, mascot, floating particles, rainbow progress
+
+Session 4: Streaks & Badges
+  → Streak tracking, 9 badge milestones, badge celebrations, trophy wall
+
+Session 5: Polish & Modularization
+  → Loader components, component architecture, lazy loading, README
 ```
+
+Every session: I described the feature → Antigravity built it → I tested → fed errors back → iterate.
 
 ---
 
-## 🛠️ Development Scripts
+## 🧪 Try It Yourself
 
-```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run db:push      # Push schema without migrations
-npm run db:migrate   # Run migrations
-npm run db:generate  # Regenerate Prisma client
-npm run db:studio    # Open Prisma Studio
 ```
+Username: test123
+Password: pass123
+```
+
+This test account has a **16-day streak**, **2 badges earned** (⭐ One Week Strong, 🏅 Half-Month Hero), and sample decks ready to practice.
 
 ---
 
-Built with ❤️ for the Cuemath AI Builder Challenge.
+## What I'd Build Next
+
+1. 🔊 **Sound effects** — satisfying "ding" on correct, "whoosh" on flip
+2. 🌙 **Dark mode** — neon-style for older students
+3. ✏️ **Card editing** — let users tweak AI-generated cards
+4. 📱 **PWA** — install on phone, offline card review
+5. 🤝 **Shared decks** — classmates can share decks
+6. 📤 **Export** — download as Anki format or CSV
+
+---
+
+## 📚 Technical Documentation
+
+> Want to know the stack, API routes, database schema, and how to run it locally?
+
+**[→ Explore the Technical README](./TECHNICAL.md)**
+
+---
+
+<div align="center">
+
+Built with 🧠 by Gaurav Sharma · Cuemath AI Builder Challenge 2025
+
+*"Flashcard apps are notoriously boring. Yours doesn't have to be."*
+
+</div>
