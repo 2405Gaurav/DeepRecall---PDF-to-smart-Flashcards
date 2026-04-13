@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { StudioUploadForm } from '@/components/studio/StudioUploadForm';
 import { DeckList } from '@/components/DeckList';
-import { TrendingUp, Sparkles } from 'lucide-react';
-import { StreakBanner, BadgeWall } from '@/components/ui/BadgeDisplay';
-import type { UserStreakPayload } from '@/lib/streaks';
+import { TrendingUp } from 'lucide-react';
 
 type StudioClientProps = {
   displayName: string;
@@ -20,20 +18,9 @@ const fade = {
 
 export function StudioClient({ displayName }: StudioClientProps) {
   const [deckRefresh, setDeckRefresh] = useState(0);
-  const [streakData, setStreakData] = useState<UserStreakPayload | null>(null);
 
   const bumpDecks = useCallback(() => {
     setDeckRefresh((k) => k + 1);
-  }, []);
-
-  // fetch streak data on mount
-  useEffect(() => {
-    fetch('/api/me/streak', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.streak) setStreakData(d.streak);
-      })
-      .catch(() => {});
   }, []);
 
   return (
@@ -46,7 +33,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
           variants={fade}
           transition={{ duration: 0.35 }}
         >
-          {/* bouncy brain mascot */}
+          {/* bouncy mascot */}
           <motion.div
             className="mx-auto mb-3 w-fit"
             animate={{ y: [0, -6, 0], rotate: [0, 3, -3, 0] }}
@@ -80,7 +67,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            Hi, {displayName} 👋 — your decks & scores stay on your{' '}
+            Hi, {displayName} 👋 — your decks &amp; scores stay on your{' '}
             <Link href="/profile" className="font-semibold text-lab-teal underline-offset-2 hover:underline">
               profile
             </Link>
@@ -88,19 +75,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
           </motion.p>
         </motion.header>
 
-        {/* streak banner — shows current streak + next badge */}
-        {streakData && (
-          <motion.section
-            className="mx-auto mt-8 max-w-3xl"
-            initial="hidden"
-            animate="show"
-            variants={fade}
-            transition={{ duration: 0.35, delay: 0.04 }}
-          >
-            <StreakBanner data={streakData} compact />
-          </motion.section>
-        )}
-
+        {/* upload form */}
         <motion.section
           className="mx-auto mt-10 max-w-3xl"
           initial="hidden"
@@ -112,6 +87,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
           <StudioUploadForm onSuccess={bumpDecks} />
         </motion.section>
 
+        {/* deck list */}
         <motion.section
           className="mx-auto mt-12 max-w-3xl"
           initial="hidden"
@@ -123,27 +99,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
           <DeckList refreshKey={deckRefresh} compact />
         </motion.section>
 
-        {/* badges section — only show if user has earned any */}
-        {streakData && streakData.badges.length > 0 && (
-          <motion.section
-            className="mx-auto mt-12 max-w-3xl"
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            variants={fade}
-            transition={{ duration: 0.35, delay: 0.1 }}
-          >
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-xl">🏅</span>
-              <h2 className="font-display text-lg font-bold text-lab-ink">Your Badges</h2>
-              <span className="rounded-full bg-lab-teal/10 px-2.5 py-0.5 text-xs font-bold text-lab-teal">
-                {streakData.badges.length}
-              </span>
-            </div>
-            <BadgeWall badges={streakData.badges} />
-          </motion.section>
-        )}
-
+        {/* profile CTA — nudges user to check their streak & badges */}
         <motion.div
           className="mx-auto mt-12 max-w-3xl"
           initial="hidden"
@@ -167,7 +123,7 @@ export function StudioClient({ displayName }: StudioClientProps) {
                 <TrendingUp className="h-6 w-6 shrink-0 text-lab-teal" aria-hidden />
               </motion.span>
               <span>
-                See how much you&apos;ve learned 📊 —{' '}
+                See your streak &amp; badges 🏅 —{' '}
                 <span className="text-lab-teal-dark underline decoration-lab-line underline-offset-4">open your profile</span>
               </span>
             </Link>

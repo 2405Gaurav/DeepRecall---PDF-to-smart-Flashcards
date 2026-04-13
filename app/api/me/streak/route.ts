@@ -1,30 +1,28 @@
 import { NextResponse } from 'next/server';
-import { readSessionUserId } from '@/lib/session-cookie';
+import { AUTH_COOKIE, verifyToken } from '@/lib/jwt';
 import { getUserStreak } from '@/lib/streaks';
 import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
+  // the session is a JWT stored in the cue_session cookie — same as auth-session.ts
   const cookieStore = await cookies();
-  const raw = cookieStore.get('cue_session')?.value;
-  if (!raw) {
+  const token = cookieStore.get(AUTH_COOKIE)?.value;
+  if (!token) {
     return NextResponse.json({ streak: null });
   }
 
-  let userId: string;
-  try {
-    const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf-8'));
-    userId = parsed.userId;
-    if (!userId) throw new Error('no userId');
-  } catch {
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
     return NextResponse.json({ streak: null });
   }
 
   try {
-    const streak = await getUserStreak(userId);
+    const streak = await getUserStreak(payload.userId);
     return NextResponse.json({ streak });
-  } catch {
+  } catch (err) {
+    console.error('[streak] failed to load streak:', err);
     return NextResponse.json({ streak: null }, { status: 500 });
   }
 }
