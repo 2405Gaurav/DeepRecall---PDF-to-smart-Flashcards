@@ -25,8 +25,8 @@ export function HeroSection({ isLoggedIn, user, openLogin, openSignup }: HeroSec
       >
         <motion.span
           className="text-5xl select-none"
-          animate={{ y: [0, -8, 0], rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ y: [0, -8] }}
+          transition={{ duration: 1.2, repeat: Infinity, repeatType: 'mirror', type: 'tween', ease: 'easeInOut' }}
         >
           🧠
         </motion.span>

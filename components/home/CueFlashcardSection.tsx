@@ -4,9 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Table2, MonitorSmartphone, LineChart, Trophy, Flame } from 'lucide-react';
+import { Table2, MonitorSmartphone, LineChart, Trophy } from 'lucide-react';
 
-// each feature has a title, body, icon, and a matching image on the left
 const FEATURES = [
   {
     id: 'teacher-cards',
@@ -42,6 +41,10 @@ const FEATURES = [
   },
 ] as const;
 
+// transition used for image swap — tween is smooth, spring is jittery on opacity+scale combos
+const IMAGE_TRANSITION = { duration: 0.35, ease: 'easeOut', type: 'tween' } as const;
+
+
 export function CueFlashcardSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeFeature = FEATURES[activeIndex];
@@ -54,29 +57,31 @@ export function CueFlashcardSection() {
     >
       <div className="overflow-hidden rounded-3xl border border-lab-line/90 bg-white/90 shadow-sm">
         <div className="grid gap-10 p-8 md:grid-cols-2 md:gap-12 md:p-12 lg:gap-16">
-          {/* left side — interactive image that changes based on selected feature */}
+
+          {/* LEFT — image panel (fixed height to stop layout jitter) */}
           <motion.div
-            className="relative min-h-[320px] md:min-h-[420px]"
+            className="relative h-[300px] md:h-[400px]"
             initial={{ opacity: 0, x: -12 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, type: 'tween' }}
           >
+            {/* background gradient — stays fixed, only image swaps */}
             <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-lab-mint/60 via-sky-50/50 to-violet-50/40">
-              {/* decorative blob shapes */}
               <div className="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-lab-teal/10 blur-2xl" />
               <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-pink-200/20 blur-2xl" />
             </div>
 
+            {/* image swap area — AnimatePresence mode=wait gives clean crossfade */}
             <div className="relative flex h-full items-center justify-center p-4 md:p-6">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={activeFeature.id}
                   className="relative w-full"
-                  initial={{ opacity: 0, scale: 0.92, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={IMAGE_TRANSITION}
                 >
                   <Image
                     src={activeFeature.image}
@@ -84,14 +89,22 @@ export function CueFlashcardSection() {
                     width={480}
                     height={360}
                     className="mx-auto rounded-xl shadow-lg"
+                    // first image gets priority; others are eagerly preloaded
                     priority={activeIndex === 0}
+                    sizes="(max-width: 768px) 90vw, 480px"
                   />
 
-                  {/* floating emoji badge in corner */}
+                  {/* floating emoji — 2-keyframe bounce (no spring on multi-keyframe) */}
                   <motion.div
                     className="absolute -right-2 -top-2 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg md:-right-3 md:-top-3 md:h-14 md:w-14"
-                    animate={{ y: [0, -5, 0], rotate: [0, 8, -8, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={{ y: [0, -6] }}
+                    transition={{
+                      duration: 0.9,
+                      repeat: Infinity,
+                      repeatType: 'mirror',
+                      type: 'tween',
+                      ease: 'easeInOut',
+                    }}
                   >
                     <span className="text-2xl md:text-3xl">{activeFeature.emoji}</span>
                   </motion.div>
@@ -99,7 +112,7 @@ export function CueFlashcardSection() {
               </AnimatePresence>
             </div>
 
-            {/* feature indicator dots */}
+            {/* dot indicators */}
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
               {FEATURES.map((f, i) => (
                 <button
@@ -117,12 +130,12 @@ export function CueFlashcardSection() {
             </div>
           </motion.div>
 
-          {/* right side — interactive feature list */}
+          {/* RIGHT — feature list */}
           <motion.div
             initial={{ opacity: 0, x: 12 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: 0.06 }}
+            transition={{ duration: 0.5, delay: 0.06, type: 'tween' }}
           >
             <h2
               id="cue-flashcard-heading"
@@ -132,7 +145,7 @@ export function CueFlashcardSection() {
             </h2>
             <p className="mt-4 text-base leading-relaxed text-lab-soft sm:text-lg">
               Built around long-term retention: strong ingestion, smart scheduling after you practice,
-              clear progress, streaks & badges — still light and playful for learners.
+              clear progress, streaks &amp; badges — still light and playful for learners.
             </p>
 
             <ul className="mt-8 space-y-2">
@@ -151,27 +164,25 @@ export function CueFlashcardSection() {
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   >
                     <div className="flex gap-3">
-                      <motion.div
+                      <div
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
                           isActive ? 'bg-pink-600 text-white' : 'border-2 border-pink-500 text-pink-600'
                         }`}
-                        animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-                        transition={{ duration: 0.5 }}
                       >
                         <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.75} aria-hidden />
-                      </motion.div>
+                      </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-display text-sm font-bold text-lab-ink md:text-base">
                           {emoji} {title}
                         </p>
-                        <AnimatePresence>
+                        <AnimatePresence initial={false}>
                           {isActive && (
                             <motion.p
                               className="mt-1 text-sm leading-relaxed text-lab-soft"
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3 }}
+                              transition={{ duration: 0.25, type: 'tween' }}
                             >
                               {body}
                             </motion.p>

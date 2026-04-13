@@ -1,21 +1,34 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
-import { ArrowLeft, BookOpen, Clock, Flame, Layers, Target, TrendingUp } from 'lucide-react';
-import { BadgeWall, StreakBanner } from '@/components/ui/BadgeDisplay';
+import { BookOpen, Clock, Flame, Layers, Target, TrendingUp } from 'lucide-react';
+import { ProfileHeader } from '@/components/profile/ui/ProfileHeader';
+import { StreakSection } from '@/components/profile/ui/StreakSection';
+import { AnalyticsStatCard, MiniStat } from '@/components/profile/ui/AnalyticsStatCard';
 import type { UserAnalyticsPayload } from '@/lib/user-analytics';
 import type { UserStreakPayload } from '@/lib/streaks';
+
+// lazy-load recharts — it's large and only needed after scroll
+const LazyBarChart = lazy(() =>
+  import('recharts').then((m) => ({
+    default: function RechartsBar({ data }: { data: Record<string, unknown>[] }) {
+      return (
+        <m.ResponsiveContainer width="100%" height="100%">
+          <m.BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+            <m.CartesianGrid strokeDasharray="3 3" stroke="#a8cfc7" />
+            <m.XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
+            <m.YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#64748b" />
+            <m.Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e4e4e7', fontSize: 13 }} />
+            <m.Bar dataKey="easy" stackId="a" fill="#0f766e" name="On track" radius={[4, 4, 0, 0] as [number,number,number,number]} />
+            <m.Bar dataKey="hard" stackId="a" fill="#f97316" name="Practice more" radius={[4, 4, 0, 0] as [number,number,number,number]} />
+          </m.BarChart>
+        </m.ResponsiveContainer>
+      );
+    },
+  }))
+);
+
 
 type ProfileClientProps = {
   displayName: string;
@@ -113,136 +126,37 @@ export function ProfileClientBento({ displayName, childName, grade, username }: 
     <div className="min-h-screen bg-lab-grid font-cue text-lab-ink">
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
 
-        {/* ── TOP BENTO ROW: profile card + streak + badges ── */}
+        {/* ── TOP BENTO ROW ── */}
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr] lg:items-start">
 
-          {/* ── LEFT: Profile card ── */}
+          {/* LEFT: Profile card (via modular sub-component) */}
           <motion.div
             initial="hidden"
             animate="show"
             variants={fade}
             transition={{ duration: 0.35, type: 'tween' }}
-            className="overflow-hidden rounded-2xl border border-lab-line/80 bg-white/95 shadow-md"
           >
-            {/* gradient header strip */}
-            <div className={`h-24 bg-gradient-to-r ${gradient} sm:h-28`} />
-
-            <div className="px-5 pb-5 sm:px-6 sm:pb-6">
-              {/* avatar + name row */}
-              <div className="-mt-9 mb-3 flex items-end gap-3 sm:-mt-10 sm:gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-white text-3xl shadow-lg sm:h-20 sm:w-20 sm:text-4xl">
-                  {avatar}
-                </div>
-                <div className="mb-1 min-w-0">
-                  <h1 className="font-display text-xl font-bold tracking-tight text-lab-teal-dark sm:text-2xl">
-                    {firstName}
-                  </h1>
-                  {username && (
-                    <p className="truncate text-sm font-semibold text-lab-teal">@{username}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* chips */}
-              <div className="flex flex-wrap gap-2 text-sm">
-                {childName && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 font-medium text-violet-700">
-                    🧒 {childName}
-                  </span>
-                )}
-                {grade && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
-                    📚 Grade {grade}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
-                  👤 {displayName || 'Learner'}
-                </span>
-              </div>
-
-              {/* motivational zero-state */}
-              {hasNoStreakOrBadge && (
-                <div className="mt-4 rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500 px-4 py-3 shadow-md">
-                  <p className="font-bold text-white">🚀 Start your streak today!</p>
-                  <p className="mt-1 text-sm text-indigo-100">{quote}</p>
-                </div>
-              )}
-
-              <Link
-                href="/studio"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-lab-teal hover:text-lab-teal-dark hover:underline"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back to studio
-              </Link>
-            </div>
+            <ProfileHeader
+              avatar={avatar}
+              gradient={gradient}
+              firstName={firstName}
+              username={username}
+              displayName={displayName}
+              childName={childName}
+              grade={grade}
+              motivationalBanner={
+                hasNoStreakOrBadge ? (
+                  <div className="mt-4 rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500 px-4 py-3 shadow-md">
+                    <p className="font-bold text-white">🚀 Start your streak today!</p>
+                    <p className="mt-1 text-sm text-indigo-100">{quote}</p>
+                  </div>
+                ) : undefined
+              }
+            />
           </motion.div>
 
-          {/* ── RIGHT: Streak + Badges stacked ── */}
-          <div className="flex flex-col gap-4">
-
-            {/* Streak banner */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fade}
-              transition={{ duration: 0.4, delay: 0.05, type: 'tween' }}
-            >
-              {streakData ? (
-                <StreakBanner data={streakData} compact />
-              ) : (
-                <div className="h-[72px] animate-pulse rounded-2xl bg-gradient-to-r from-orange-200 to-amber-200" />
-              )}
-            </motion.div>
-
-            {/* Badges */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fade}
-              transition={{ duration: 0.4, delay: 0.08, type: 'tween' }}
-              className="rounded-2xl border border-lab-line/70 bg-white/95 p-4 shadow-sm"
-            >
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-lg">🏅</span>
-                <h2 className="font-display text-base font-bold text-lab-ink">Badges</h2>
-                {streakData && streakData.badges.length > 0 && (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700">
-                    {streakData.badges.length} earned
-                  </span>
-                )}
-              </div>
-
-              {streakData ? (
-                streakData.badges.length > 0 ? (
-                  <BadgeWall badges={streakData.badges} variant="compact" />
-                ) : (
-                  /* empty badge motivational state — 2-keyframe animation only */
-                  <motion.div
-                    className="rounded-xl bg-gradient-to-br from-violet-500 via-indigo-500 to-blue-500 px-4 py-6 text-center shadow-sm"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, type: 'tween' }}
-                  >
-                    <motion.span
-                      className="block text-4xl"
-                      animate={{ y: [0, -8] }}
-                      transition={{ duration: 0.9, repeat: Infinity, repeatType: 'mirror', type: 'tween', ease: 'easeInOut' }}
-                    >
-                      🎖️
-                    </motion.span>
-                    <p className="mt-3 text-sm font-bold text-white">No badges yet!</p>
-                    <p className="mx-auto mt-1 max-w-[200px] text-xs text-indigo-100">{quote}</p>
-                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-                      <span>🌱</span><span>3 days = first badge</span>
-                    </div>
-                  </motion.div>
-                )
-              ) : (
-                <div className="h-28 animate-pulse rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100" />
-              )}
-            </motion.div>
-          </div>
+          {/* RIGHT: Streak + Badges (via modular sub-component) */}
+          <StreakSection streakData={streakData} emptyQuote={quote} />
         </section>
 
         {/* ── ANALYTICS ── */}
@@ -286,12 +200,12 @@ export function ProfileClientBento({ displayName, childName, grade, username }: 
 
           {analytics && (
             <>
-              {/* stat cards */}
+              {/* stat cards — use modular AnalyticsStatCard */}
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatCard icon={<Target className="h-5 w-5 text-emerald-600" />} label="Mastered" value={analytics.cardsMastered} accent="emerald" />
-                <StatCard icon={<Layers className="h-5 w-5 text-teal-600" />} label="Reviews" value={analytics.totalReviews} accent="teal" />
-                <StatCard icon={<Flame className="h-5 w-5 text-orange-500" />} label="Due now" value={analytics.cardsDue} accent="orange" />
-                <StatCard icon={<BookOpen className="h-5 w-5 text-indigo-500" />} label="Decks" value={analytics.decksOwned} accent="indigo" />
+                <AnalyticsStatCard icon={<Target className="h-5 w-5 text-emerald-600" />} label="Mastered" value={analytics.cardsMastered} accent="emerald" />
+                <AnalyticsStatCard icon={<Layers className="h-5 w-5 text-teal-600" />} label="Reviews" value={analytics.totalReviews} accent="teal" />
+                <AnalyticsStatCard icon={<Flame className="h-5 w-5 text-orange-500" />} label="Due now" value={analytics.cardsDue} accent="orange" />
+                <AnalyticsStatCard icon={<BookOpen className="h-5 w-5 text-indigo-500" />} label="Decks" value={analytics.decksOwned} accent="indigo" />
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -299,20 +213,13 @@ export function ProfileClientBento({ displayName, childName, grade, username }: 
                 <MiniStat label="Needs practice" value={analytics.hardTotal} color="text-orange-600" />
               </div>
 
-              {/* 7-day chart */}
+              {/* 7-day chart — lazy-loaded, only renders when scrolled into view */}
               <div className="mt-8">
                 <p className="text-sm font-semibold text-zinc-800">Last 7 days</p>
                 <div className="mt-3 h-52 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#a8cfc7" />
-                      <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#64748b" />
-                      <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e4e4e7', fontSize: 13 }} />
-                      <Bar dataKey="easy" stackId="a" fill="#0f766e" name="On track" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="hard" stackId="a" fill="#f97316" name="Practice more" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<div className="h-52 animate-pulse rounded-xl bg-slate-100" />}>
+                    <LazyBarChart data={chartData} />
+                  </Suspense>
                 </div>
               </div>
 
@@ -402,44 +309,5 @@ export function ProfileClientBento({ displayName, childName, grade, username }: 
   );
 }
 
-/* ── Sub-components ── */
 
-function StatCard({
-  icon, label, value, accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  accent: 'emerald' | 'teal' | 'orange' | 'indigo';
-}) {
-  const bg: Record<string, string> = {
-    emerald: 'bg-emerald-50 border-emerald-200',
-    teal: 'bg-teal-50 border-teal-200',
-    orange: 'bg-orange-50 border-orange-200',
-    indigo: 'bg-indigo-50 border-indigo-200',
-  };
-  const text: Record<string, string> = {
-    emerald: 'text-emerald-700',
-    teal: 'text-teal-700',
-    orange: 'text-orange-700',
-    indigo: 'text-indigo-700',
-  };
-  return (
-    <div className={`rounded-xl border-2 ${bg[accent]} p-4 text-center`}>
-      <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-sm">
-        {icon}
-      </div>
-      <p className={`text-3xl font-black ${text[accent]}`}>{value}</p>
-      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-    </div>
-  );
-}
 
-function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-lab-line/60 bg-white px-3 py-1 text-sm">
-      <strong className={color}>{value}</strong>
-      <span className="text-lab-soft">{label}</span>
-    </span>
-  );
-}

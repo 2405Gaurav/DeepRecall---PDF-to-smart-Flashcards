@@ -1,28 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import {
-  BookOpen,
-  Flame,
-  Trash2,
-  TrendingUp,
-  Trophy,
-  Eye,
-  EyeOff,
-  Play,
-  ChevronDown,
-  RotateCcw,
-} from 'lucide-react';
+import { BookOpen, Flame, Trash2, TrendingUp, Trophy } from 'lucide-react';
 import type { DeckCardRow, DeckDetailStats } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ProgressRing } from '@/components/studio/ui/ProgressRing';
+import { DeckStatCard } from '@/components/studio/ui/DeckStatCard';
+import { FlashcardItem, ShowAnswersToggle } from '@/components/studio/ui/FlashcardItem';
+import { DeckActionsBar } from '@/components/studio/ui/DeckActionsBar';
 
 const PAGE_SIZE = 5;
 
+/** Normalise raw API response rows into typed DeckCardRow objects. */
 function mapRow(c: Record<string, unknown>): DeckCardRow {
   return {
     id: String(c.id),
@@ -30,59 +23,12 @@ function mapRow(c: Record<string, unknown>): DeckCardRow {
     answer: String(c.answer),
     masteryLevel: (c.masteryLevel as DeckCardRow['masteryLevel']) ?? 'NEW',
     cardType: c.cardType != null ? String(c.cardType) : undefined,
-    nextReview: c.nextReview ? (typeof c.nextReview === 'string' ? c.nextReview : new Date(c.nextReview as Date).toISOString()) : undefined,
+    nextReview: c.nextReview
+      ? (typeof c.nextReview === 'string' ? c.nextReview : new Date(c.nextReview as Date).toISOString())
+      : undefined,
     easyCount: typeof c.easyCount === 'number' ? c.easyCount : 0,
     hardCount: typeof c.hardCount === 'number' ? c.hardCount : 0,
   };
-}
-
-function ProgressRing({ pct }: { pct: number }) {
-  const r = 34;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.min(100, Math.max(0, pct)) / 100);
-  // pick ring color based on progress — more fun for kids to see it change
-  const ringColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#0f766e' : pct >= 25 ? '#eab308' : '#f97316';
-  const emoji = pct >= 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 50 ? '💪' : pct >= 25 ? '📈' : '🚀';
-  return (
-    <div className="relative">
-      <motion.svg
-        width="80" height="80" viewBox="0 0 80 80" className="-rotate-90 shrink-0"
-        initial={{ scale: 0, rotate: -90 }}
-        animate={{ scale: 1, rotate: -90 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.3 }}
-      >
-        <defs>
-          <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#0f766e" />
-            <stop offset="50%" stopColor="#06b6d4" />
-            <stop offset="100%" stopColor="#8b5cf6" />
-          </linearGradient>
-        </defs>
-        <circle cx="40" cy="40" r={r} fill="none" className="stroke-lab-line/30" strokeWidth="7" />
-        <motion.circle
-          cx="40"
-          cy="40"
-          r={r}
-          fill="none"
-          stroke="url(#ring-grad)"
-          strokeWidth="7"
-          strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
-          strokeLinecap="round"
-        />
-      </motion.svg>
-      <motion.span
-        className="absolute inset-0 flex items-center justify-center text-lg"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 1, type: 'spring', stiffness: 300 }}
-      >
-        {emoji}
-      </motion.span>
-    </div>
-  );
 }
 
 export function StudioDeckClient({ deckId }: { deckId: string }) {
@@ -176,7 +122,6 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
   const { newCards, learningCards, familiarCards, masteredCards, totalCards, masteredPct } = stats;
   const visibleCards = cards.slice(0, visibleCount);
   const canShowMore = visibleCount < cards.length;
-  const remaining = cards.length - visibleCount;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -227,77 +172,15 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <StatMini
-              label="New"
-              count={newCards}
-              pct={pctOf(newCards, totalCards)}
-              className="border-sky-200/90 bg-sky-50/90 text-sky-900"
-              icon={<BookOpen className="h-4 w-4 text-sky-600" />}
-            />
-            <StatMini
-              label="Learning"
-              count={learningCards}
-              pct={pctOf(learningCards, totalCards)}
-              className="border-orange-200/90 bg-lab-sand/90 text-orange-950"
-              icon={<Flame className="h-4 w-4 text-orange-600" />}
-            />
-            <StatMini
-              label="Familiar"
-              count={familiarCards}
-              pct={pctOf(familiarCards, totalCards)}
-              className="border-amber-200/90 bg-amber-50/90 text-amber-950"
-              icon={<TrendingUp className="h-4 w-4 text-amber-600" />}
-            />
-            <StatMini
-              label="Mastered"
-              count={masteredCards}
-              pct={pctOf(masteredCards, totalCards)}
-              className="border-emerald-200/90 bg-lab-mint/90 text-emerald-900"
-              icon={<Trophy className="h-4 w-4 text-emerald-700" />}
-            />
+            <DeckStatCard label="New" count={newCards} pct={pctOf(newCards, totalCards)} className="border-sky-200/90 bg-sky-50/90 text-sky-900" icon={<BookOpen className="h-4 w-4 text-sky-600" />} />
+            <DeckStatCard label="Learning" count={learningCards} pct={pctOf(learningCards, totalCards)} className="border-orange-200/90 bg-lab-sand/90 text-orange-950" icon={<Flame className="h-4 w-4 text-orange-600" />} />
+            <DeckStatCard label="Familiar" count={familiarCards} pct={pctOf(familiarCards, totalCards)} className="border-amber-200/90 bg-amber-50/90 text-amber-950" icon={<TrendingUp className="h-4 w-4 text-amber-600" />} />
+            <DeckStatCard label="Mastered" count={masteredCards} pct={pctOf(masteredCards, totalCards)} className="border-emerald-200/90 bg-lab-mint/90 text-emerald-900" icon={<Trophy className="h-4 w-4 text-emerald-700" />} />
           </div>
         </Card>
       </motion.div>
 
-      <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-        <motion.p
-          className="text-sm font-semibold text-lab-ink"
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {totalCards} flashcard{totalCards !== 1 ? 's' : ''} created ✨
-        </motion.p>
-        <motion.div
-          whileHover={{ scale: 1.04, y: -2 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <Button
-            asChild
-            size="lg"
-            className="rounded-xl bg-lab-teal font-bold text-white shadow-md transition hover:bg-lab-teal-dark animate-pulse-glow"
-          >
-            <Link href={`/studio/practice/${deckId}`} className="inline-flex items-center gap-2">
-              <Play className="h-4 w-4 fill-current" />
-              🎯 Start practice
-            </Link>
-          </Button>
-        </motion.div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAnswers((s) => !s)}
-          className="rounded-xl border-lab-line/90 bg-white/90 font-semibold text-lab-ink shadow-sm hover:bg-lab-mint/30"
-        >
-          {showAnswers ? <EyeOff className="mr-1.5 h-4 w-4" /> : <Eye className="mr-1.5 h-4 w-4" />}
-          {showAnswers ? 'Hide' : 'Show'} answers
-        </Button>
-      </div>
-      <p className="mx-auto mt-3 max-w-md text-center text-[11px] leading-relaxed text-lab-soft">
-        After each card, how well you knew it updates when it comes back — easier cards wait longer; tricky ones return
-        sooner.
-      </p>
+
 
       <section className="mt-8">
         <h2 className="text-sm font-bold text-lab-ink">All flashcards</h2>
@@ -305,82 +188,30 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
           Showing {visibleCards.length} of {cards.length}
         </p>
         <ul className="mt-3 space-y-3">
-          {visibleCards.map((c, i) => {
-            const masteryBadge = {
-              NEW: { label: 'New', cls: 'bg-neutral-100 text-neutral-600 border-neutral-200' },
-              LEARNING: { label: 'Learning', cls: 'bg-orange-50 text-orange-700 border-orange-200' },
-              FAMILIAR: { label: 'Familiar', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-              MASTERED: { label: 'Mastered', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-            }[c.masteryLevel] ?? { label: 'New', cls: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
-
-            const nextDate = c.nextReview
-              ? new Date(c.nextReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-              : '—';
-
-            return (
-            <motion.li
+          {visibleCards.map((c, i) => (
+            <FlashcardItem
               key={c.id}
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Card className="border-lab-line/80 bg-white/95 p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-bold text-lab-teal">{i + 1}/{cards.length}</span>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${masteryBadge.cls}`}>{masteryBadge.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] text-lab-soft shrink-0">
-                    <span title="Next review">📅 {nextDate}</span>
-                    <span className="text-emerald-600">{c.easyCount ?? 0}✓</span>
-                    <span className="text-orange-600">{c.hardCount ?? 0}✗</span>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); void handleResetCard(c.id); }}
-                      className="rounded p-0.5 hover:bg-red-50 hover:text-red-600 transition"
-                      title="Reset to NEW"
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div>
-                    <span className="text-[10px] font-bold text-lab-teal">Question</span>
-                    <p className="mt-0.5 text-sm leading-snug text-lab-ink">{c.question}</p>
-                  </div>
-                  <div className={cn(!showAnswers && 'relative select-none')}>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-lab-soft">Answer</span>
-                    <p className={cn('mt-0.5 text-sm leading-snug text-lab-ink/90 transition', !showAnswers && 'blur-md')}>
-                      {c.answer}
-                    </p>
-                    {!showAnswers && (
-                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/35">
-                        <EyeOff className="h-6 w-6 text-lab-line" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </motion.li>
-            );
-          })}
+              card={c}
+              index={i}
+              total={cards.length}
+              showAnswers={showAnswers}
+              onReset={(id) => void handleResetCard(id)}
+            />
+          ))}
         </ul>
-        {canShowMore && (
-          <div className="mt-5 flex justify-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => setVisibleCount((n) => Math.min(n + PAGE_SIZE, cards.length))}
-              className="rounded-xl border-2 border-lab-teal/40 bg-white/90 font-bold text-lab-teal shadow-sm transition hover:border-lab-teal hover:bg-lab-mint/40"
-            >
-              <ChevronDown className="mr-2 h-4 w-4" />
-              Show more ({Math.min(remaining, PAGE_SIZE)} more)
-            </Button>
-          </div>
-        )}
+        <DeckActionsBar
+          deckId={deckId}
+          totalCards={totalCards}
+          canShowMore={canShowMore}
+          showMoreCount={Math.min(cards.length - visibleCount, PAGE_SIZE)}
+          onShowMore={() => setVisibleCount((n) => Math.min(n + PAGE_SIZE, cards.length))}
+          showAnswersToggle={
+            <ShowAnswersToggle
+              showAnswers={showAnswers}
+              onToggle={() => setShowAnswers((s) => !s)}
+            />
+          }
+        />
       </section>
     </div>
   );
@@ -389,33 +220,4 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
 function pctOf(part: number, total: number) {
   if (total <= 0) return 0;
   return Math.round((part / total) * 100);
-}
-
-function StatMini({
-  label,
-  count,
-  pct,
-  className,
-  icon,
-}: {
-  label: string;
-  count: number;
-  pct: number;
-  className: string;
-  icon: ReactNode;
-}) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.03, y: -1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-      className={cn('rounded-xl border px-2 py-2.5', className)}
-    >
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[10px] font-bold uppercase tracking-wide opacity-90">{label}</span>
-        {icon}
-      </div>
-      <p className="mt-1 text-lg font-bold">{pct}%</p>
-      <p className="text-[10px] opacity-80">{count} cards</p>
-    </motion.div>
-  );
 }
