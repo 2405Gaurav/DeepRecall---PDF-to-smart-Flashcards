@@ -196,7 +196,7 @@ This test account has a **16-day streak**, **2 badges earned** (⭐ One Week Str
 
 <div align="center">
 
-Built by Gaurav · Cuemath AI Builder Challenge 2025
+Built by Gaurav · Cuemath AI Builder Challenge 2026
 
 *"Flashcard apps are notoriously boring. Yours doesn't have to be."*
 
