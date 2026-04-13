@@ -9,21 +9,23 @@ import { AnalyticsStatCard, MiniStat } from '@/components/profile/ui/AnalyticsSt
 import type { UserAnalyticsPayload } from '@/lib/user-analytics';
 import type { UserStreakPayload } from '@/lib/streaks';
 
-// lazy-load recharts — it's large and only needed after scroll
+// Lazy-load recharts — large bundle, only needed when analytics section is visible.
+// Use explicit pixel height (208 = h-52) — height="100%" returns -1 inside Suspense
+// because the Suspense boundary breaks CSS height inheritance before first paint.
 const LazyBarChart = lazy(() =>
-  import('recharts').then((m) => ({
+  import('recharts').then(({ ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid }) => ({
     default: function RechartsBar({ data }: { data: Record<string, unknown>[] }) {
       return (
-        <m.ResponsiveContainer width="100%" height="100%">
-          <m.BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <m.CartesianGrid strokeDasharray="3 3" stroke="#a8cfc7" />
-            <m.XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
-            <m.YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#64748b" />
-            <m.Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e4e4e7', fontSize: 13 }} />
-            <m.Bar dataKey="easy" stackId="a" fill="#0f766e" name="On track" radius={[4, 4, 0, 0] as [number,number,number,number]} />
-            <m.Bar dataKey="hard" stackId="a" fill="#f97316" name="Practice more" radius={[4, 4, 0, 0] as [number,number,number,number]} />
-          </m.BarChart>
-        </m.ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={208}>
+          <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#a8cfc7" />
+            <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#64748b" />
+            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="#64748b" />
+            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e4e4e7', fontSize: 13 }} />
+            <Bar dataKey="easy" stackId="a" fill="#0f766e" name="On track" radius={[4, 4, 0, 0] as [number, number, number, number]} />
+            <Bar dataKey="hard" stackId="a" fill="#f97316" name="Practice more" radius={[4, 4, 0, 0] as [number, number, number, number]} />
+          </BarChart>
+        </ResponsiveContainer>
       );
     },
   }))
