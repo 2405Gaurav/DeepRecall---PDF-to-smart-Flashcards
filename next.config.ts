@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: { unoptimized: true },
-  serverExternalPackages: ['pdf-parse', 'pg', 'bcryptjs', 'jsonwebtoken'],
+  serverExternalPackages: ['unpdf', 'pg', 'bcryptjs', 'jsonwebtoken'],
   turbopack: {
     root: __dirname,
   },

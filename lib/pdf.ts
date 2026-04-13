@@ -1,83 +1,123 @@
 /**
- * lib/pdf.ts — PDF text extraction with Vercel-safe fallback
+ * lib/pdf.ts — PDF text extraction using unpdf
  *
- * pdf-parse@2.4.5 uses a class-based API: new PDFParse({ data }) → getText()
- * On Vercel, when pdf-parse fails (workers, native module issues), we fall back
- * to a pure-JS raw text extraction from the PDF binary stream.
+ * unpdf is a modern, Vercel/Edge-compatible PDF library built on top of
+ * Mozilla's pdfjs-dist. It works without workers, canvas, or filesystem
+ * access — perfect for Next.js serverless functions.
+ *
+ * API: extractText(uint8array, { mergePages: true }) → { text: string }
+ *
+ * Falls back to a pure-Node zlib stream parser if unpdf can't extract
+ * enough text (e.g. heavily custom-encoded fonts).
  */
 
-/** Raw fallback: extract visible text strings from PDF binary without any library */
-function rawExtractFromPdf(buffer: Buffer): string {
-  const content = buffer.toString('latin1'); // latin1 preserves byte values
+import { inflateSync } from 'zlib';
+
+// ─── zlib fallback: decompress FlateDecode streams and parse text operators ───
+
+function decompressAndExtract(buffer: Buffer): string {
+  const raw = buffer.toString('binary');
   const chunks: string[] = [];
 
-  // Match text in PDF stream operators: (text)Tj  [(text)]TJ  (text)Td etc.
-  const bracketRe = /\(([^)\\]{3,})\)\s*(?:Tj|TJ|Td|TD|T\*|Tf|\'|\")/g;
+  const streamRe = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
   let m: RegExpExecArray | null;
-  while ((m = bracketRe.exec(content)) !== null) {
-    const t = m[1]
-      .replace(/\\n/g, '\n')
-      .replace(/\\r/g, ' ')
-      .replace(/\\t/g, ' ')
-      .replace(/\\\\/g, '\\')
-      .replace(/\\([()\\])/g, '$1')
-      .replace(/[^\x20-\x7E\n]/g, ' ')
-      .trim();
-    if (t.length >= 3) chunks.push(t);
+
+  while ((m = streamRe.exec(raw)) !== null) {
+    const streamBuf = Buffer.from(m[1], 'binary');
+    let decompressed = '';
+    try {
+      decompressed = inflateSync(streamBuf).toString('latin1');
+    } catch {
+      decompressed = m[1]; // not compressed — try raw
+    }
+    extractFromStream(decompressed, chunks);
   }
 
-  // Also grab BT...ET text block contents for hex strings
-  const btRe = /BT\s([\s\S]*?)\sET/g;
+  return chunks.join(' ');
+}
+
+function extractFromStream(content: string, out: string[]): void {
+  const btRe = /BT\s([\s\S]*?)\s*ET/g;
+  let m: RegExpExecArray | null;
+
   while ((m = btRe.exec(content)) !== null) {
     const block = m[1];
-    const hexRe = /<([0-9A-Fa-f]{4,})>/g;
-    let hm: RegExpExecArray | null;
-    while ((hm = hexRe.exec(block)) !== null) {
-      const hex = hm[1];
+
+    // (text) Tj / ' / "
+    const tjRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*(?:Tj|\'|\")/g;
+    let tm: RegExpExecArray | null;
+    while ((tm = tjRe.exec(block)) !== null) {
+      const t = decodePdfString(tm[1]);
+      if (t.length >= 2) out.push(t);
+    }
+
+    // [(text)(text2) ...] TJ
+    const tjArrRe = /\[([\s\S]*?)\]\s*TJ/g;
+    while ((tm = tjArrRe.exec(block)) !== null) {
+      const strRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)/g;
+      let sm: RegExpExecArray | null;
+      let word = '';
+      while ((sm = strRe.exec(tm[1])) !== null) {
+        word += decodePdfString(sm[1]);
+      }
+      if (word.length >= 2) out.push(word);
+    }
+
+    // <hex> Tj/TJ
+    const hexRe = /<([0-9A-Fa-f]+)>\s*(?:Tj|TJ|\'|\")/g;
+    while ((tm = hexRe.exec(block)) !== null) {
       let decoded = '';
+      const hex = tm[1];
       for (let i = 0; i < hex.length - 1; i += 2) {
         const code = parseInt(hex.slice(i, i + 2), 16);
         if (code >= 0x20 && code <= 0x7e) decoded += String.fromCharCode(code);
       }
-      if (decoded.length >= 3) chunks.push(decoded);
+      if (decoded.length >= 2) out.push(decoded);
     }
   }
-
-  return chunks.join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
-type PdfTextResult = { text?: string; pages?: unknown[]; total?: number };
+function decodePdfString(s: string): string {
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, ' ')
+    .replace(/\\t/g, ' ')
+    .replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\\(.)/g, '$1')
+    .replace(/[^\x20-\x7E\n]/g, ' ')
+    .trim();
+}
+
+// ─── Main export ─────────────────────────────────────────────────────────────
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   let text = '';
   let primaryError: string | null = null;
 
-  // ── Attempt 1: pdf-parse@2.x class API ──
+  // ── Attempt 1: unpdf (pdfjs-dist based, Vercel-safe, no workers) ──────────
   try {
-    const { PDFParse } = await import('pdf-parse');
-    const parser = new PDFParse({ data: buffer }) as unknown as {
-      getText: () => Promise<PdfTextResult>;
-      destroy: () => Promise<void>;
-    };
-    const result = await parser.getText();
-    if (typeof result === 'string') {
-      text = result;
-    } else if (result && typeof result.text === 'string') {
-      text = result.text;
-    }
-    try { await parser.destroy(); } catch { /* non-fatal */ }
+    const { extractText } = await import('unpdf');
+    // unpdf requires Uint8Array, not Buffer
+    const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const result = await extractText(uint8, { mergePages: true });
+    text = result.text ?? '';
   } catch (err) {
     primaryError = err instanceof Error ? err.message : String(err);
-    console.error('[pdf.ts] PDFParse attempt failed:', primaryError);
+    console.error('[pdf.ts] unpdf attempt failed:', primaryError);
     text = '';
   }
 
-  // ── Attempt 2: raw stream extraction fallback ──
-  if (text.trim().length < 50) {
-    const raw = rawExtractFromPdf(buffer);
-    if (raw.length > text.trim().length) {
-      console.log('[pdf.ts] Using raw fallback — extracted', raw.length, 'chars');
-      text = raw;
+  // ── Attempt 2: zlib-decompressed raw stream parser ────────────────────────
+  if (text.replace(/\s+/g, '').length < 100) {
+    console.log('[pdf.ts] unpdf gave insufficient text, trying zlib fallback…');
+    try {
+      const raw = decompressAndExtract(buffer);
+      if (raw.replace(/\s+/g, '').length > text.replace(/\s+/g, '').length) {
+        console.log('[pdf.ts] zlib fallback extracted', raw.length, 'chars');
+        text = raw;
+      }
+    } catch (zlibErr) {
+      console.error('[pdf.ts] zlib fallback failed:', zlibErr);
     }
   }
 
@@ -88,15 +128,14 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .trim();
 
-  // diagnostic log — visible in Vercel function logs
   console.log(
-    `[pdf.ts] buffer=${buffer.length}B | extracted=${text.length} chars | preview="${text.slice(0, 80)}"`
+    `[pdf.ts] buffer=${buffer.length}B | final=${text.length} chars | preview="${text.slice(0, 80)}"`
   );
 
-  if (text.length < 10) {
-    const detail = primaryError ? ` (pdf-parse error: ${primaryError})` : '';
+  if (text.replace(/\s+/g, '').length < 20) {
+    const detail = primaryError ? ` (unpdf: ${primaryError.slice(0, 150)})` : '';
     throw new Error(
-      `Extracted only ${text.length} chars — PDF appears image-only or encrypted.${detail}`
+      `Extracted only ${text.length} chars from ${buffer.length}B PDF — likely image-only or encrypted.${detail}`
     );
   }
 
