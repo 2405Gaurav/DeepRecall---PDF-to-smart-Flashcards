@@ -39,9 +39,10 @@ export async function POST(request: NextRequest) {
     try {
       text = await extractTextFromPDF(buffer);
     } catch (e) {
-      console.error('PDF parse error:', e);
+      const msg = e instanceof Error ? e.message : 'Unknown PDF parse error';
+      console.error('PDF parse error:', msg);
       return NextResponse.json(
-        { error: 'Could not read this PDF. It may be encrypted or image-only.' },
+        { error: msg },  // pass through actual error — helps debug Vercel issues
         { status: 400 }
       );
     }
