@@ -98,12 +98,12 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
     setSuccess(null);
     setProgress('Reading PDF…');
 
-    const stages = ['Reading PDF…', 'AI is building cards…', 'Saving your deck…'];
+    const stages = ['Uploading PDF…', 'Extracting text…', 'Redirecting to your deck…'];
     let i = 0;
     const tick = setInterval(() => {
       i = Math.min(i + 1, stages.length - 1);
       setProgress(stages[i]);
-    }, 7000);
+    }, 1500);
 
     const run = async () => {
       try {
@@ -119,10 +119,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
         }
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-        const count = data.deck?.flashcards?.length ?? 0;
-        const title = data.deck?.title ?? 'your deck';
-        setSuccess(`${count} cards from “${title}”`);
-
+        // Phase 1 done - deck created, cards ready in background.
         onSuccess?.();
         router.push(`/studio/deck/${data.deck.id}`);
       } catch (err) {

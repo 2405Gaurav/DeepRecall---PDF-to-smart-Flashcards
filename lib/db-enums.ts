@@ -17,5 +17,12 @@ export const RO = {
   MASTERED: 'MASTERED',
 } as const;
 
+export const DS = {
+  GENERATING: 'GENERATING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+} as const;
+
 export type MasteryLevelLiteral = (typeof ML)[keyof typeof ML];
 export type ReviewOutcomeLiteral = (typeof RO)[keyof typeof RO];
+export type DeckStatusLiteral = (typeof DS)[keyof typeof DS];

@@ -47,12 +47,14 @@ model Badge {
 }
 
 model Deck {
-  id         String      @id @default(uuid()) @db.Uuid
-  title      String
-  createdAt  DateTime    @default(now()) @map("created_at")
-  userId     String?     @map("user_id") @db.Uuid
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  flashcards Flashcard[]
+  id              String      @id @default(uuid()) @db.Uuid
+  title           String
+  status          DeckStatus  @default(GENERATING)
+  generationError String?     @map("generation_error")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  userId          String?     @map("user_id") @db.Uuid
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  flashcards      Flashcard[]
 
   @@map("decks")
 }
@@ -92,6 +94,12 @@ model ReviewLog {
   @@index([userId, createdAt])
   @@index([flashcardId])
   @@map("review_logs")
+}
+
+enum DeckStatus {
+  GENERATING
+  READY
+  FAILED
 }
 
 enum Difficulty {

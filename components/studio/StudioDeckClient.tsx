@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -12,10 +12,11 @@ import { ProgressRing } from '@/components/studio/ui/ProgressRing';
 import { DeckStatCard } from '@/components/studio/ui/DeckStatCard';
 import { FlashcardItem, ShowAnswersToggle } from '@/components/studio/ui/FlashcardItem';
 import { DeckActionsBar } from '@/components/studio/ui/DeckActionsBar';
+import { CueMathLoader } from '@/components/ui/CueMathLoader';
 
 const PAGE_SIZE = 5;
+const POLL_INTERVAL_MS = 2500;
 
-/** Normalise raw API response rows into typed DeckCardRow objects. */
 function mapRow(c: Record<string, unknown>): DeckCardRow {
   return {
     id: String(c.id),
@@ -34,6 +35,8 @@ function mapRow(c: Record<string, unknown>): DeckCardRow {
 export function StudioDeckClient({ deckId }: { deckId: string }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [deckStatus, setDeckStatus] = useState<'GENERATING' | 'READY' | 'FAILED' | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [stats, setStats] = useState<DeckDetailStats | null>(null);
   const [cards, setCards] = useState<DeckCardRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,32 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
   const [deleting, setDeleting] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  /** Poll /api/decks/:id/status every POLL_INTERVAL_MS until READY or FAILED */
+  const startPolling = useCallback(() => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/decks/${deckId}/status`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json() as { status: string; flashcardCount: number; error?: string };
+        setDeckStatus(data.status as 'GENERATING' | 'READY' | 'FAILED');
+        if (data.status === 'READY') {
+          stopPolling();
+          await load(); // refresh full deck data
+        } else if (data.status === 'FAILED') {
+          stopPolling();
+          setGenerationError(data.error ?? 'Card generation failed. Please try uploading again.');
+          setLoading(false);
+        }
+      } catch { /* network glitch — keep polling */ }
+    }, POLL_INTERVAL_MS);
+  }, [deckId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,8 +82,23 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       const deckJson = await deckRes.json();
       const cardsJson = await cardsRes.json();
       if (!deckRes.ok) throw new Error(deckJson.error || 'Deck not found');
-      if (!cardsRes.ok) throw new Error(cardsJson.error || 'Could not load cards');
+
       setTitle(deckJson.deck.title);
+      setDeckStatus(deckJson.deck.status ?? 'READY');
+
+      // if still generating, start polling instead of showing error
+      if (deckJson.deck.status === 'GENERATING') {
+        setLoading(false);
+        startPolling();
+        return;
+      }
+      if (deckJson.deck.status === 'FAILED') {
+        setGenerationError(deckJson.deck.generationError ?? 'Generation failed.');
+        setLoading(false);
+        return;
+      }
+
+      if (!cardsRes.ok) throw new Error(cardsJson.error || 'Could not load cards');
       setStats(deckJson.stats as DeckDetailStats);
       setCards((cardsJson.cards as Record<string, unknown>[]).map(mapRow));
       setVisibleCount(PAGE_SIZE);
@@ -63,12 +107,9 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [deckId]);
+  }, [deckId, startPolling]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+  useEffect(() => { void load(); return () => stopPolling(); }, [load]);
   useEffect(() => {
     setVisibleCount((v) => (cards.length === 0 ? v : Math.min(v, cards.length)));
   }, [cards.length]);
@@ -79,9 +120,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
     try {
       const res = await fetch(`/api/decks/${deckId}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) router.push('/studio');
-    } finally {
-      setDeleting(false);
-    }
+    } finally { setDeleting(false); }
   };
 
   const handleResetCard = async (cardId: string) => {
@@ -93,21 +132,56 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
         credentials: 'include',
         body: JSON.stringify({ outcome: 'LEARNING' }),
       });
-      // refresh to show updated state
       await load();
-    } catch (e) {
-      console.warn('Reset failed:', e);
-    }
+    } catch (e) { console.warn('Reset failed:', e); }
   };
 
-  if (loading || !stats) {
+  // ── Loading state ────────────────────────────────────────────────────────
+  if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-lab-soft">
-        Loading deck…
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <CueMathLoader message="Loading deck…" />
       </div>
     );
   }
 
+  // ── GENERATING: show animated waiting screen ─────────────────────────────
+  if (deckStatus === 'GENERATING') {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-16 text-center">
+        <CueMathLoader message="AI is building your flashcards…" />
+        <div className="max-w-sm">
+          <h1 className="font-display text-xl font-bold text-lab-ink">{title || 'Processing your PDF'}</h1>
+          <p className="mt-2 text-sm text-lab-soft">
+            Gemini is reading your notes and crafting teacher-quality cards. This usually takes
+            10–30 seconds depending on your PDF size.
+          </p>
+          <p className="mt-4 text-xs text-lab-soft/70">This page refreshes automatically ✨</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FAILED: show error with retry ───────────────────────────────────────
+  if (deckStatus === 'FAILED' || generationError) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-12 text-center">
+        <p className="text-3xl">😔</p>
+        <h1 className="mt-3 font-display text-lg font-bold text-lab-ink">Card generation failed</h1>
+        <p className="mt-2 text-sm text-lab-soft">{generationError ?? 'Something went wrong generating your cards.'}</p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => void handleDelete()} disabled={deleting} className="border-red-200 text-red-600">
+            <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete deck
+          </Button>
+          <Button asChild size="sm" className="bg-lab-teal text-white">
+            <Link href="/studio">← Try another PDF</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
@@ -118,6 +192,8 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       </div>
     );
   }
+
+  if (!stats) return null;
 
   const { newCards, learningCards, familiarCards, masteredCards, totalCards, masteredPct } = stats;
   const visibleCards = cards.slice(0, visibleCount);
@@ -140,31 +216,18 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
           <h1 className="font-display text-xl font-bold text-lab-teal-dark sm:text-2xl">{title}</h1>
           <p className="mt-1 text-xs text-lab-soft">{totalCards} cards in your deck</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => void handleDelete()}
-          disabled={deleting}
-          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-        >
-          <Trash2 className="mr-1 h-3.5 w-3.5" />
-          Delete
+        <Button type="button" variant="outline" size="sm" onClick={() => void handleDelete()}
+          disabled={deleting} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+          <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
         </Button>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
         <Card className="mt-5 border-lab-line/80 bg-white/95 p-4 shadow-sm backdrop-blur-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-sm font-bold text-lab-ink">Learning progress</h2>
-              <p className="text-xs text-lab-soft">
-                {totalCards} card{totalCards !== 1 ? 's' : ''} in your deck
-              </p>
+              <p className="text-xs text-lab-soft">{totalCards} card{totalCards !== 1 ? 's' : ''} in your deck</p>
             </div>
             <div className="flex items-center gap-2">
               <ProgressRing pct={masteredPct} />
@@ -180,37 +243,19 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
         </Card>
       </motion.div>
 
-
-
       <section className="mt-8">
         <h2 className="text-sm font-bold text-lab-ink">All flashcards</h2>
-        <p className="mt-1 text-xs text-lab-soft">
-          Showing {visibleCards.length} of {cards.length}
-        </p>
+        <p className="mt-1 text-xs text-lab-soft">Showing {visibleCards.length} of {cards.length}</p>
         <ul className="mt-3 space-y-3">
           {visibleCards.map((c, i) => (
-            <FlashcardItem
-              key={c.id}
-              card={c}
-              index={i}
-              total={cards.length}
-              showAnswers={showAnswers}
-              onReset={(id) => void handleResetCard(id)}
-            />
+            <FlashcardItem key={c.id} card={c} index={i} total={cards.length}
+              showAnswers={showAnswers} onReset={(id) => void handleResetCard(id)} />
           ))}
         </ul>
-        <DeckActionsBar
-          deckId={deckId}
-          totalCards={totalCards}
-          canShowMore={canShowMore}
+        <DeckActionsBar deckId={deckId} totalCards={totalCards} canShowMore={canShowMore}
           showMoreCount={Math.min(cards.length - visibleCount, PAGE_SIZE)}
           onShowMore={() => setVisibleCount((n) => Math.min(n + PAGE_SIZE, cards.length))}
-          showAnswersToggle={
-            <ShowAnswersToggle
-              showAnswers={showAnswers}
-              onToggle={() => setShowAnswers((s) => !s)}
-            />
-          }
+          showAnswersToggle={<ShowAnswersToggle showAnswers={showAnswers} onToggle={() => setShowAnswers((s) => !s)} />}
         />
       </section>
     </div>
