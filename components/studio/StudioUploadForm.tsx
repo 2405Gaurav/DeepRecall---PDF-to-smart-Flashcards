@@ -18,9 +18,9 @@ function friendlyError(raw: string): string {
     return 'That took too long — our helpers got tired! Try a smaller PDF or try again. ⏳';
   if (lower.includes('connection') || lower.includes('network') || lower.includes('fetch'))
     return 'Hmm, we lost connection for a second. Check your internet and try again! 📡';
-  if (lower.includes('too few') || lower.includes('not enough') || lower.includes('extract enough'))
-    return 'We couldn\u2019t find enough text in that PDF. Try a different file with more words! 📝';
-  if (lower.includes('encrypted') || lower.includes('image-only') || lower.includes('could not read'))
+  if (lower.includes('too few') || lower.includes('not enough') || lower.includes('extract enough') || lower.includes('extracted only') || lower.includes('image-only') || lower.includes('image only'))
+    return `We couldn’t find enough text in that PDF. Try a different file with more words! 📝 (${raw.slice(0, 120)})`;
+  if (lower.includes('encrypted') || lower.includes('could not read'))
     return 'This PDF is locked or has only pictures. Try one with regular text! 🔒';
   if (lower.includes('sign in') || lower.includes('onboarding') || lower.includes('401'))
     return 'You need to sign in first! Go to the home page and click Get Started. 🚀';

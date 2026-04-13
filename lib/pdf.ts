@@ -88,10 +88,15 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .trim();
 
-  if (text.length < 30) {
-    const detail = primaryError ? ` (${primaryError})` : '';
+  // diagnostic log — visible in Vercel function logs
+  console.log(
+    `[pdf.ts] buffer=${buffer.length}B | extracted=${text.length} chars | preview="${text.slice(0, 80)}"`
+  );
+
+  if (text.length < 10) {
+    const detail = primaryError ? ` (pdf-parse error: ${primaryError})` : '';
     throw new Error(
-      `Could not extract enough text. The PDF may be image-only or encrypted.${detail}`
+      `Extracted only ${text.length} chars — PDF appears image-only or encrypted.${detail}`
     );
   }
 
