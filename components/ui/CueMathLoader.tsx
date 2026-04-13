@@ -19,7 +19,7 @@ const MESSAGES = [
   'Did you know? Spaced repetition can cut study time by 50%.',
   'The Ebbinghaus forgetting curve: you forget 70% within 24 hours without review.',
   'Active recall is 2x more effective than re-reading.',
-  'Your cards are being prepared by an AI teacher right now.',
+  'CuemathsAI is crafting teacher-quality cards for you right now.',
   'Testing yourself beats re-reading every time.',
   'Sleeping after studying helps memories consolidate.',
 ];
@@ -217,7 +217,7 @@ export function CueMathLoader({ message, size = 'md', className = '', fullScreen
  */
 const UPLOAD_TIPS = [
   { emoji: '📖', tip: 'Reading your PDF page by page…' },
-  { emoji: '🤖', tip: 'Your cards are being written by an AI teacher right now.' },
+  { emoji: '🤖', tip: 'CuemathsAI is writing your cards right now.' },
   { emoji: '🧠', tip: 'Did you know? Spaced repetition can cut study time by 50%.' },
   { emoji: '📊', tip: 'The Ebbinghaus forgetting curve shows you forget 70% within 24 hours without review.' },
   { emoji: '⚡', tip: 'Active recall is 2x more effective than re-reading.' },

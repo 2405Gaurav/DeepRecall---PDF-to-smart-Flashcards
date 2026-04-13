@@ -75,7 +75,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       // safety cap — don't poll forever
       if (pollTickRef.current > MAX_POLL_TICKS) {
         stopPolling();
-        setGenerationError('Generation timed out. The AI took too long — try uploading again.');
+        setGenerationError('Generation timed out. CuemathsAI took too long — try uploading again.');
         setDeckStatus('FAILED');
         setLoading(false);
         return;
@@ -230,7 +230,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                ✨ AI is generating your flashcards…
+                ✨ CuemathsAI is generating your flashcards…
               </motion.span>
             </p>
           </div>
@@ -252,7 +252,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
                 🧠
               </motion.div>
               <div>
-                <p className="text-sm font-bold text-lab-ink">Gemini is reading your PDF</p>
+                <p className="text-sm font-bold text-lab-ink">CuemathsAI is reading your PDF</p>
                 <p className="text-xs text-lab-soft">
                   Building ~{skeletonCount} teacher-quality flashcards. This usually takes 10–30 seconds.
                 </p>

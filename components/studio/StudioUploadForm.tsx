@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, FileText, CheckCircle2, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { CreateFlashcardsModal } from '@/components/studio/CreateFlashcardsModal';
-import { UploadLoader } from '@/components/ui/CueMathLoader';
 import type { CardCountPreset } from '@/lib/gemini';
 
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -19,7 +19,7 @@ function friendlyError(raw: string): string {
   if (lower.includes('connection') || lower.includes('network') || lower.includes('fetch'))
     return 'Hmm, we lost connection for a second. Check your internet and try again! 📡';
   if (lower.includes('too few') || lower.includes('not enough') || lower.includes('extract enough') || lower.includes('extracted only') || lower.includes('image-only') || lower.includes('image only'))
-    return `We couldn’t find enough text in that PDF. Try a different file with more words! 📝 (${raw.slice(0, 120)})`;
+    return `We couldn't find enough text in that PDF. Try a different file with more words! 📝 (${raw.slice(0, 120)})`;
   if (lower.includes('encrypted') || lower.includes('could not read'))
     return 'This PDF is locked or has only pictures. Try one with regular text! 🔒';
   if (lower.includes('sign in') || lower.includes('onboarding') || lower.includes('401'))
@@ -29,6 +29,13 @@ function friendlyError(raw: string): string {
   // fallback — still keep it friendly
   return 'Something didn\u2019t work quite right. Give it another try! 💪';
 }
+
+/** Upload progress stages — kept short since Phase 1 is fast (~2-3s) */
+const UPLOAD_STAGES = [
+  'Reading PDF…',
+  'Extracting text…',
+  'Creating your deck…',
+];
 
 interface StudioUploadFormProps {
   onSuccess?: () => void;
@@ -96,14 +103,13 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
     setIsUploading(true);
     setError(null);
     setSuccess(null);
-    setProgress('Reading PDF…');
+    setProgress(UPLOAD_STAGES[0]);
 
-    const stages = ['Uploading PDF…', 'Extracting text…', 'Redirecting to your deck…'];
     let i = 0;
     const tick = setInterval(() => {
-      i = Math.min(i + 1, stages.length - 1);
-      setProgress(stages[i]);
-    }, 1500);
+      i = Math.min(i + 1, UPLOAD_STAGES.length - 1);
+      setProgress(UPLOAD_STAGES[i]);
+    }, 1200);
 
     const run = async () => {
       try {
@@ -119,7 +125,8 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
         }
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-        // Phase 1 done - deck created, cards ready in background.
+        // Phase 1 done — deck shell created, card generation runs in background.
+        // Redirect immediately to the deck page which shows skeletons + polls.
         onSuccess?.();
         router.push(`/studio/deck/${data.deck.id}?preset=${preset}`);
       } catch (err) {
@@ -177,7 +184,40 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
             </button>
           </div>
         ) : isUploading ? (
-          <UploadLoader stage={progress} fileName={uploadLabel ?? undefined} />
+          /* ── Compact inline upload loader ─────────────────────────── */
+          <motion.div
+            className="flex flex-col items-center gap-3 px-4 py-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-lab-teal" />
+              <motion.p
+                className="text-sm font-semibold text-lab-teal-dark"
+                key={progress}
+                initial={{ opacity: 0, y: 3 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {progress || 'Preparing…'}
+              </motion.p>
+            </div>
+            {uploadLabel && (
+              <p className="text-xs text-zinc-500">
+                <span className="font-medium text-zinc-700">{uploadLabel}</span>
+              </p>
+            )}
+            {/* bouncing dots — single consistent style */}
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="h-1.5 w-1.5 rounded-full bg-lab-teal"
+                  animate={{ y: [0, -4, 0], opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </div>
+          </motion.div>
         ) : (
           <div className="py-4 text-center sm:py-5">
             <p className="text-base text-zinc-700 sm:text-lg">
@@ -241,7 +281,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
 
 function cnShell(drag: boolean, hasFile: boolean, busy: boolean) {
   if (busy) {
-    return 'cursor-wait rounded-2xl border-2 border-dashed border-violet-200 bg-violet-50/40 px-5 py-8';
+    return 'cursor-wait rounded-2xl border-2 border-dashed border-lab-teal/30 bg-lab-mint/20 px-5 py-8';
   }
   if (hasFile) {
     return 'cursor-default rounded-2xl border-2 border-violet-200 bg-white px-5 py-5 shadow-sm';

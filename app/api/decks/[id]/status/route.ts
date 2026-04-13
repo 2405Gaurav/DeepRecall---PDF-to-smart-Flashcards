@@ -53,7 +53,7 @@ export async function GET(
         });
       } else {
         // no cards and timed-out — mark as failed
-        const errMsg = 'Generation timed out. The AI took too long — try uploading again.';
+        const errMsg = 'Generation timed out. CuemathsAI took too long — try uploading again.';
         await prisma.deck.update({
           where: { id },
           data: { status: DS.FAILED, generationError: errMsg },

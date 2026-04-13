@@ -11,7 +11,7 @@ export const maxDuration = 120;
 
 /**
  * Phase 2 — runs in the background after the HTTP response is sent.
- * Generates flashcards with Gemini and saves them to the deck.
+ * Generates flashcards with CuemathsAI and saves them to the deck.
  */
 async function generateAndSaveCards(
   deckId: string,

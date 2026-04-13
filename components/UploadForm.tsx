@@ -120,7 +120,7 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <p className="text-xs text-slate-500 mb-3 text-center">
-        PDFs are parsed on this server with unpdf (pdfjs-dist based), then flashcards are generated with Gemini and stored in
+        PDFs are parsed on this server with unpdf (pdfjs-dist based), then flashcards are generated with CuemathsAI and stored in
         PostgreSQL (Neon).
       </p>
 
