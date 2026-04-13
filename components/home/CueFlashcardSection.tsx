@@ -10,7 +10,7 @@ const FEATURES = [
   {
     id: 'teacher-cards',
     title: 'Teacher-quality cards',
-    body: 'PDFs become recall-heavy questions — concepts, definitions, links between ideas, and examples — not shallow bullet dumps.',
+    body: 'PDFs become recall-heavy questions — concepts, definitions, links between ideas — not shallow bullet dumps.',
     Icon: Table2,
     image: '/images/child-flashcards.png',
     emoji: '📝',
@@ -18,7 +18,7 @@ const FEATURES = [
   {
     id: 'spaced-repetition',
     title: 'Spaced repetition built in',
-    body: "What you nail shows up later; what's shaky returns sooner — scheduling inspired by proven spaced-review ideas (SM-2 style).",
+    body: "What you nail shows up later; what's shaky returns sooner — SM-2 style scheduling.",
     Icon: MonitorSmartphone,
     image: '/images/child-spaced-repetition.png',
     emoji: '🔄',
@@ -26,7 +26,7 @@ const FEATURES = [
   {
     id: 'progress',
     title: 'Progress you can feel',
-    body: 'Mastery, "due now," and last-practiced cues across many decks — motivating without a wall of numbers.',
+    body: 'Mastery, due-now counts, and last-practiced cues across all decks — motivating without noise.',
     Icon: LineChart,
     image: '/images/child-progress.png',
     emoji: '📈',
@@ -34,16 +34,12 @@ const FEATURES = [
   {
     id: 'streaks-badges',
     title: 'Streaks, badges & milestones',
-    body: 'Daily practice streaks earn badges at 3, 7, 15, and 30 days. Track your personal milestones — kids love watching their trophy wall grow! 🏆',
+    body: 'Daily streaks earn badges at 3, 7, 15, and 30 days. Kids love watching their trophy wall grow! 🏆',
     Icon: Trophy,
     image: '/images/child-badges.png',
     emoji: '🔥',
   },
 ] as const;
-
-// transition used for image swap — tween is smooth, spring is jittery on opacity+scale combos
-const IMAGE_TRANSITION = { duration: 0.35, ease: 'easeOut', type: 'tween' } as const;
-
 
 export function CueFlashcardSection() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -52,28 +48,21 @@ export function CueFlashcardSection() {
   return (
     <section
       id="cue-flashcard"
-      className="mx-auto max-w-6xl scroll-mt-24 px-4 py-14 sm:px-6 md:py-20"
+      className="mx-auto max-w-6xl scroll-mt-24 px-4 py-10 sm:px-6 md:py-14"
       aria-labelledby="cue-flashcard-heading"
     >
       <div className="overflow-hidden rounded-3xl border border-lab-line/90 bg-white/90 shadow-sm">
-        <div className="grid gap-10 p-8 md:grid-cols-2 md:gap-12 md:p-12 lg:gap-16">
+        {/* equal two-column grid — items-stretch makes both cols the same height */}
+        <div className="grid items-stretch md:grid-cols-2">
 
-          {/* LEFT — image panel (fixed height to stop layout jitter) */}
-          <motion.div
-            className="relative h-[300px] md:h-[400px]"
-            initial={{ opacity: 0, x: -12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, type: 'tween' }}
-          >
-            {/* background gradient — stays fixed, only image swaps */}
-            <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-lab-mint/60 via-sky-50/50 to-violet-50/40">
-              <div className="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-lab-teal/10 blur-2xl" />
-              <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-pink-200/20 blur-2xl" />
-            </div>
+          {/* ── LEFT: image panel fills full column height ── */}
+          <div className="relative bg-gradient-to-br from-lab-mint/60 via-sky-50/50 to-violet-50/40">
+            {/* decorative blobs */}
+            <div className="pointer-events-none absolute -left-6 -top-6 h-28 w-28 rounded-full bg-lab-teal/10 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-pink-200/20 blur-2xl" />
 
-            {/* image swap area — AnimatePresence mode=wait gives clean crossfade */}
-            <div className="relative flex h-full items-center justify-center p-4 md:p-6">
+            {/* image swap — fills the full height of the left column */}
+            <div className="relative flex h-full min-h-[340px] items-center justify-center p-6 md:min-h-0 md:p-8">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={activeFeature.id}
@@ -81,108 +70,94 @@ export function CueFlashcardSection() {
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
-                  transition={IMAGE_TRANSITION}
+                  transition={{ duration: 0.3, ease: 'easeOut', type: 'tween' }}
                 >
                   <Image
                     src={activeFeature.image}
                     alt={activeFeature.title}
-                    width={480}
-                    height={360}
-                    className="mx-auto rounded-xl shadow-lg"
-                    // first image gets priority; others are eagerly preloaded
+                    width={520}
+                    height={390}
+                    className="mx-auto w-full max-w-sm rounded-2xl shadow-lg md:max-w-full"
                     priority={activeIndex === 0}
-                    sizes="(max-width: 768px) 90vw, 480px"
+                    sizes="(max-width: 768px) 90vw, 50vw"
                   />
 
-                  {/* floating emoji — 2-keyframe bounce (no spring on multi-keyframe) */}
+                  {/* floating emoji badge */}
                   <motion.div
-                    className="absolute -right-2 -top-2 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg md:-right-3 md:-top-3 md:h-14 md:w-14"
+                    className="absolute -right-1 -top-1 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg md:-right-3 md:-top-3 md:h-13 md:w-13"
                     animate={{ y: [0, -6] }}
-                    transition={{
-                      duration: 0.9,
-                      repeat: Infinity,
-                      repeatType: 'mirror',
-                      type: 'tween',
-                      ease: 'easeInOut',
-                    }}
+                    transition={{ duration: 1.0, repeat: Infinity, repeatType: 'mirror', type: 'tween', ease: 'easeInOut' }}
                   >
-                    <span className="text-2xl md:text-3xl">{activeFeature.emoji}</span>
+                    <span className="text-xl md:text-2xl">{activeFeature.emoji}</span>
                   </motion.div>
                 </motion.div>
               </AnimatePresence>
-            </div>
 
-            {/* dot indicators */}
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
-              {FEATURES.map((f, i) => (
-                <button
-                  type="button"
-                  key={f.id}
-                  onClick={() => setActiveIndex(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === activeIndex
-                      ? 'w-6 bg-lab-teal'
-                      : 'w-2 bg-lab-teal/30 hover:bg-lab-teal/50'
-                  }`}
-                  aria-label={`Show ${f.title}`}
-                />
-              ))}
+              {/* dot indicators */}
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+                {FEATURES.map((f, i) => (
+                  <button
+                    type="button"
+                    key={f.id}
+                    onClick={() => setActiveIndex(i)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === activeIndex ? 'w-5 bg-lab-teal' : 'w-1.5 bg-lab-teal/30 hover:bg-lab-teal/50'
+                    }`}
+                    aria-label={`Show ${f.title}`}
+                  />
+                ))}
+              </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* RIGHT — feature list */}
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: 0.06, type: 'tween' }}
-          >
+          {/* ── RIGHT: feature list ── */}
+          <div className="flex flex-col justify-center p-7 md:p-10">
             <h2
               id="cue-flashcard-heading"
-              className="font-display text-3xl font-bold leading-tight tracking-tight text-lab-ink sm:text-4xl md:text-[2.25rem] md:leading-[1.15]"
+              className="font-display text-2xl font-bold leading-tight tracking-tight text-lab-ink sm:text-3xl md:text-[2rem]"
             >
               A <span className="text-pink-600">Cue-flashcard</span> lab for your notes
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-lab-soft sm:text-lg">
-              Built around long-term retention: strong ingestion, smart scheduling after you practice,
-              clear progress, streaks &amp; badges — still light and playful for learners.
+            <p className="mt-3 text-sm leading-relaxed text-lab-soft sm:text-base">
+              Built around long-term retention: strong ingestion, smart scheduling, clear progress,
+              streaks &amp; badges — light and playful for learners.
             </p>
 
-            <ul className="mt-8 space-y-2">
+            <ul className="mt-6 space-y-1.5">
               {FEATURES.map(({ id, title, body, Icon, emoji }, i) => {
                 const isActive = i === activeIndex;
                 return (
                   <motion.li
                     key={id}
                     onClick={() => setActiveIndex(i)}
-                    className={`cursor-pointer rounded-xl border px-4 py-3.5 transition-all ${
+                    className={`cursor-pointer rounded-xl border px-3.5 py-3 transition-all ${
                       isActive
                         ? 'border-lab-teal/40 bg-lab-mint/40 shadow-sm ring-1 ring-lab-teal/20'
-                        : 'border-transparent bg-transparent hover:border-lab-line/60 hover:bg-white/60'
+                        : 'border-transparent hover:border-lab-line/60 hover:bg-white/60'
                     }`}
-                    whileHover={{ x: isActive ? 0 : 4 }}
+                    whileHover={{ x: isActive ? 0 : 3 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   >
-                    <div className="flex gap-3">
+                    <div className="flex gap-2.5">
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                           isActive ? 'bg-pink-600 text-white' : 'border-2 border-pink-500 text-pink-600'
                         }`}
                       >
-                        <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.75} aria-hidden />
+                        <Icon className="h-4 w-4" strokeWidth={isActive ? 2.2 : 1.75} aria-hidden />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-display text-sm font-bold text-lab-ink md:text-base">
+                        <p className="text-sm font-bold text-lab-ink">
                           {emoji} {title}
                         </p>
                         <AnimatePresence initial={false}>
                           {isActive && (
                             <motion.p
-                              className="mt-1 text-sm leading-relaxed text-lab-soft"
+                              className="mt-0.5 text-xs leading-relaxed text-lab-soft"
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.25, type: 'tween' }}
+                              transition={{ duration: 0.22, type: 'tween' }}
                             >
                               {body}
                             </motion.p>
@@ -191,7 +166,7 @@ export function CueFlashcardSection() {
                       </div>
                       {isActive && (
                         <motion.span
-                          className="mt-1 text-lab-teal"
+                          className="mt-0.5 text-sm text-lab-teal"
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: 'spring', stiffness: 500 }}
@@ -207,11 +182,11 @@ export function CueFlashcardSection() {
 
             <Link
               href="/studio"
-              className="mt-8 inline-flex items-center gap-1 text-base font-bold text-pink-600 transition hover:text-pink-700"
+              className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-pink-600 transition hover:text-pink-700"
             >
               Try it in your studio <span aria-hidden>→</span>
             </Link>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
