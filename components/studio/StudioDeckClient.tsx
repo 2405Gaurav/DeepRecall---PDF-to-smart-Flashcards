@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { BookOpen, Flame, Trash2, TrendingUp, Trophy } from 'lucide-react';
 import type { DeckCardRow, DeckDetailStats } from '@/lib/types';
@@ -12,10 +12,20 @@ import { ProgressRing } from '@/components/studio/ui/ProgressRing';
 import { DeckStatCard } from '@/components/studio/ui/DeckStatCard';
 import { FlashcardItem, ShowAnswersToggle } from '@/components/studio/ui/FlashcardItem';
 import { DeckActionsBar } from '@/components/studio/ui/DeckActionsBar';
+import { SkeletonFlashcard } from '@/components/studio/ui/SkeletonFlashcard';
 import { CueMathLoader } from '@/components/ui/CueMathLoader';
 
 const PAGE_SIZE = 5;
 const POLL_INTERVAL_MS = 2500;
+/** Safety cap — stop polling after this many ticks (~3.3 min) */
+const MAX_POLL_TICKS = 80;
+
+/** Map for how many skeleton placeholders to show per preset */
+const PRESET_SKELETON_COUNT: Record<string, number> = {
+  few: 8,
+  normal: 16,
+  many: 32,
+};
 
 function mapRow(c: Record<string, unknown>): DeckCardRow {
   return {
@@ -34,6 +44,7 @@ function mapRow(c: Record<string, unknown>): DeckCardRow {
 
 export function StudioDeckClient({ deckId }: { deckId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState('');
   const [deckStatus, setDeckStatus] = useState<'GENERATING' | 'READY' | 'FAILED' | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -45,6 +56,11 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
   const [showAnswers, setShowAnswers] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTickRef = useRef(0);
+
+  // grab expected skeleton count from query param (?preset=few|normal|many)
+  const presetParam = searchParams.get('preset') ?? 'normal';
+  const expectedCount = PRESET_SKELETON_COUNT[presetParam] ?? 16;
 
   const stopPolling = () => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -53,7 +69,17 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
   /** Poll /api/decks/:id/status every POLL_INTERVAL_MS until READY or FAILED */
   const startPolling = useCallback(() => {
     stopPolling();
+    pollTickRef.current = 0;
     pollRef.current = setInterval(async () => {
+      pollTickRef.current += 1;
+      // safety cap — don't poll forever
+      if (pollTickRef.current > MAX_POLL_TICKS) {
+        stopPolling();
+        setGenerationError('Generation timed out. The AI took too long — try uploading again.');
+        setDeckStatus('FAILED');
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(`/api/decks/${deckId}/status`, { credentials: 'include' });
         if (!res.ok) return;
@@ -61,7 +87,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
         setDeckStatus(data.status as 'GENERATING' | 'READY' | 'FAILED');
         if (data.status === 'READY') {
           stopPolling();
-          await load(); // refresh full deck data
+          await load(); // refresh full deck data — cards are ready now
         } else if (data.status === 'FAILED') {
           stopPolling();
           setGenerationError(data.error ?? 'Card generation failed. Please try uploading again.');
@@ -86,7 +112,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       setTitle(deckJson.deck.title);
       setDeckStatus(deckJson.deck.status ?? 'READY');
 
-      // if still generating, start polling instead of showing error
+      // if still generating, show skeleton UI and start polling
       if (deckJson.deck.status === 'GENERATING') {
         setLoading(false);
         startPolling();
@@ -136,28 +162,11 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
     } catch (e) { console.warn('Reset failed:', e); }
   };
 
-  // ── Loading state ────────────────────────────────────────────────────────
+  // ── Initial loading spinner (first fetch only) ───────────────────────────
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <CueMathLoader message="Loading deck…" />
-      </div>
-    );
-  }
-
-  // ── GENERATING: show animated waiting screen ─────────────────────────────
-  if (deckStatus === 'GENERATING') {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-        <CueMathLoader message="AI is building your flashcards…" />
-        <div className="max-w-sm">
-          <h1 className="font-display text-xl font-bold text-lab-ink">{title || 'Processing your PDF'}</h1>
-          <p className="mt-2 text-sm text-lab-soft">
-            Gemini is reading your notes and crafting teacher-quality cards. This usually takes
-            10–30 seconds depending on your PDF size.
-          </p>
-          <p className="mt-4 text-xs text-lab-soft/70">This page refreshes automatically ✨</p>
-        </div>
       </div>
     );
   }
@@ -193,6 +202,100 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
     );
   }
 
+  // ── GENERATING: show full deck layout with skeleton cards ────────────────
+  const isGenerating = deckStatus === 'GENERATING';
+
+  if (isGenerating) {
+    const skeletonCount = expectedCount;
+
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        {/* breadcrumbs */}
+        <div className="mb-4 flex flex-wrap items-center gap-3 text-xs">
+          <Button asChild variant="ghost" size="sm" className="h-auto px-2 py-1 text-lab-teal hover:text-lab-teal-dark">
+            <Link href="/studio">← Studio</Link>
+          </Button>
+          <span className="text-lab-line">|</span>
+          <Button asChild variant="ghost" size="sm" className="h-auto px-2 py-1 text-lab-soft hover:text-lab-ink">
+            <Link href="/">Home</Link>
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-xl font-bold text-lab-teal-dark sm:text-2xl">{title || 'Building your deck…'}</h1>
+            <p className="mt-1 text-xs text-lab-soft">
+              <motion.span
+                className="inline-flex items-center gap-1"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                ✨ AI is generating your flashcards…
+              </motion.span>
+            </p>
+          </div>
+        </div>
+
+        {/* generating progress banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Card className="mt-5 border-lab-teal/20 bg-gradient-to-r from-lab-mint/40 via-white to-lab-lilac/30 p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <motion.div
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-lab-teal/10 text-xl"
+                animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                🧠
+              </motion.div>
+              <div>
+                <p className="text-sm font-bold text-lab-ink">Gemini is reading your PDF</p>
+                <p className="text-xs text-lab-soft">
+                  Building ~{skeletonCount} teacher-quality flashcards. This usually takes 10–30 seconds.
+                </p>
+              </div>
+              <div className="ml-auto flex gap-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-lab-teal"
+                    animate={{ y: [0, -6, 0], opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* skeleton flashcard list */}
+        <section className="mt-8">
+          <h2 className="text-sm font-bold text-lab-ink">Flashcards</h2>
+          <p className="mt-1 text-xs text-lab-soft">Preparing {skeletonCount} cards…</p>
+          <ul className="mt-3 space-y-3">
+            {Array.from({ length: Math.min(skeletonCount, PAGE_SIZE) }).map((_, i) => (
+              <SkeletonFlashcard key={`skel-${i}`} index={i} delay={i} />
+            ))}
+          </ul>
+
+          {/* disabled actions bar */}
+          <DeckActionsBar
+            deckId={deckId}
+            totalCards={skeletonCount}
+            canShowMore={false}
+            onShowMore={() => {}}
+            showAnswersToggle={<ShowAnswersToggle showAnswers={false} onToggle={() => {}} />}
+            generating
+          />
+        </section>
+      </div>
+    );
+  }
+
+  // ── READY: Normal deck view ─────────────────────────────────────────────
   if (!stats) return null;
 
   const { newCards, learningCards, familiarCards, masteredCards, totalCards, masteredPct } = stats;

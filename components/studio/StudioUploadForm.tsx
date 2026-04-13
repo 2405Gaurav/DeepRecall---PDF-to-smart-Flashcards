@@ -121,7 +121,7 @@ export function StudioUploadForm({ onSuccess }: StudioUploadFormProps) {
 
         // Phase 1 done - deck created, cards ready in background.
         onSuccess?.();
-        router.push(`/studio/deck/${data.deck.id}`);
+        router.push(`/studio/deck/${data.deck.id}?preset=${preset}`);
       } catch (err) {
         const raw = err instanceof Error ? err.message : 'Upload failed';
         setError(friendlyError(raw));
