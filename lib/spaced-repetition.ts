@@ -28,12 +28,43 @@ function clampInterval(days: number): number {
   return Math.min(MAX_INTERVAL_DAYS, Math.max(1, Math.round(days)));
 }
 
-/** Determine mastery level from interval + outcome */
-function computeMasteryLevel(interval: number, wasHard: boolean): MasteryLevelLiteral {
+/** Determine mastery level from interval + outcome + user intent.
+ *  The outcome parameter lets the user's explicit choice act as a minimum floor —
+ *  so a NEW card marked "Mastered" won't get stuck at LEARNING just because
+ *  the interval is only 3 days on first review. */
+function computeMasteryLevel(
+  interval: number,
+  wasHard: boolean,
+  outcome?: ReviewOutcomeLiteral,
+): MasteryLevelLiteral {
   if (wasHard) return interval < 4 ? ML.LEARNING : ML.FAMILIAR;
-  if (interval > 14) return ML.MASTERED;
-  if (interval >= 4) return ML.FAMILIAR;
-  return ML.LEARNING;
+
+  // interval-based level (pure SM-2)
+  let level: MasteryLevelLiteral;
+  if (interval > 14) level = ML.MASTERED;
+  else if (interval >= 4) level = ML.FAMILIAR;
+  else level = ML.LEARNING;
+
+  // user intent floor — if the user explicitly said MASTERED or FAMILIAR
+  // but the interval is still small (first few reviews), bump the level
+  if (outcome === RO.MASTERED && masteryOrd(level) < masteryOrd(ML.MASTERED)) {
+    level = ML.FAMILIAR; // at minimum FAMILIAR; full MASTERED needs interval >14
+  }
+  if (outcome === RO.FAMILIAR && masteryOrd(level) < masteryOrd(ML.FAMILIAR)) {
+    level = ML.FAMILIAR;
+  }
+
+  return level;
+}
+
+function masteryOrd(l: MasteryLevelLiteral): number {
+  switch (l) {
+    case ML.NEW: return 0;
+    case ML.LEARNING: return 1;
+    case ML.FAMILIAR: return 2;
+    case ML.MASTERED: return 3;
+    default: return 0;
+  }
 }
 
 export interface ReviewPlan {
@@ -102,7 +133,7 @@ export function planReviewUpdate(
     }
   }
 
-  const masteryLevel = computeMasteryLevel(interval, wasHard);
+  const masteryLevel = computeMasteryLevel(interval, wasHard, outcome);
 
   return {
     masteryLevel,

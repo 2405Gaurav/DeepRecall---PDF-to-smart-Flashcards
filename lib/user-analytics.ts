@@ -1,6 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { ML } from '@/lib/db-enums';
 
+type AnalyticsCard = {
+  id: string;
+  question: string;
+  easyCount: number;
+  hardCount: number;
+  masteryLevel: string;
+  deckTitle: string;
+};
+
 export type UserAnalyticsPayload = {
   totalReviews: number;
   easyTotal: number;
@@ -9,13 +18,14 @@ export type UserAnalyticsPayload = {
   decksOwned: number;
   cardsMastered: number;
   cardsDue: number;
-  topCards: {
-    id: string;
-    question: string;
-    easyCount: number;
-    hardCount: number;
-    deckTitle: string;
-  }[];
+  /** @deprecated kept for backwards compat — use strongCards / struggleCards */
+  topCards: AnalyticsCard[];
+  /** Cards user is strongest on: high easyCount, low hardCount */
+  strongCards: AnalyticsCard[];
+  /** Cards user struggles with: hardCount >= 2, ordered by hardest first */
+  struggleCards: AnalyticsCard[];
+  /** Per-mastery-level breakdown across all decks */
+  masteryBreakdown: { new: number; learning: number; familiar: number; mastered: number };
   recentActivity: { at: string; outcome: string; questionSnippet: string; deckTitle: string }[];
 };
 
@@ -35,23 +45,34 @@ export async function getUserAnalytics(userId: string): Promise<UserAnalyticsPay
     })
   ).map((d) => d.id);
 
-  const [logs, topCardsRaw, decksOwned, totalAgg, totalReviewEvents] = await Promise.all([
+  const cardSelect = {
+    id: true,
+    question: true,
+    easyCount: true,
+    hardCount: true,
+    masteryLevel: true,
+    deck: { select: { title: true } },
+  } as const;
+
+  const [logs, strongCardsRaw, struggleCardsRaw, decksOwned, totalAgg, totalReviewEvents] = await Promise.all([
     prisma.reviewLog.findMany({
       where: { userId, createdAt: { gte: since } },
       select: { createdAt: true, outcome: true },
       orderBy: { createdAt: 'asc' },
     }),
+    // strong cards — high easyCount, low hardCount, actually reviewed
     prisma.flashcard.findMany({
-      where: { deck: { userId } },
-      orderBy: [{ easyCount: 'desc' }, { hardCount: 'desc' }],
+      where: { deck: { userId }, easyCount: { gte: 1 }, hardCount: { lt: 2 } },
+      orderBy: [{ easyCount: 'desc' }],
       take: 6,
-      select: {
-        id: true,
-        question: true,
-        easyCount: true,
-        hardCount: true,
-        deck: { select: { title: true } },
-      },
+      select: cardSelect,
+    }),
+    // struggle cards — hardCount >= 2, ordered worst first
+    prisma.flashcard.findMany({
+      where: { deck: { userId }, hardCount: { gte: 2 } },
+      orderBy: [{ hardCount: 'desc' }],
+      take: 6,
+      select: cardSelect,
     }),
     prisma.deck.count({ where: { userId } }),
     prisma.reviewLog.groupBy({
@@ -88,17 +109,31 @@ export async function getUserAnalytics(userId: string): Promise<UserAnalyticsPay
 
   let cardsMastered = 0;
   let cardsDue = 0;
+  const masteryBreakdown = { new: 0, learning: 0, familiar: 0, mastered: 0 };
   if (deckIds.length) {
-    const [m, d] = await Promise.all([
+    const [m, d, mNew, mLearning, mFamiliar] = await Promise.all([
       prisma.flashcard.count({
         where: { deckId: { in: deckIds }, masteryLevel: ML.MASTERED },
       }),
       prisma.flashcard.count({
         where: { deckId: { in: deckIds }, nextReview: { lte: now } },
       }),
+      prisma.flashcard.count({
+        where: { deckId: { in: deckIds }, masteryLevel: ML.NEW },
+      }),
+      prisma.flashcard.count({
+        where: { deckId: { in: deckIds }, masteryLevel: ML.LEARNING },
+      }),
+      prisma.flashcard.count({
+        where: { deckId: { in: deckIds }, masteryLevel: ML.FAMILIAR },
+      }),
     ]);
     cardsMastered = m;
     cardsDue = d;
+    masteryBreakdown.new = mNew;
+    masteryBreakdown.learning = mLearning;
+    masteryBreakdown.familiar = mFamiliar;
+    masteryBreakdown.mastered = m;
   }
 
   const easyTotal =
@@ -120,6 +155,18 @@ export async function getUserAnalytics(userId: string): Promise<UserAnalyticsPay
     },
   });
 
+  const mapCard = (c: typeof strongCardsRaw[number]): AnalyticsCard => ({
+    id: c.id,
+    question: c.question,
+    easyCount: c.easyCount,
+    hardCount: c.hardCount,
+    masteryLevel: c.masteryLevel,
+    deckTitle: c.deck.title,
+  });
+
+  const strongCards = strongCardsRaw.map(mapCard);
+  const struggleCards = struggleCardsRaw.map(mapCard);
+
   return {
     totalReviews: totalReviewEvents,
     easyTotal,
@@ -128,13 +175,11 @@ export async function getUserAnalytics(userId: string): Promise<UserAnalyticsPay
     decksOwned,
     cardsMastered,
     cardsDue,
-    topCards: topCardsRaw.map((c) => ({
-      id: c.id,
-      question: c.question,
-      easyCount: c.easyCount,
-      hardCount: c.hardCount,
-      deckTitle: c.deck.title,
-    })),
+    // backwards compat — merge both lists
+    topCards: [...strongCards, ...struggleCards].slice(0, 6),
+    strongCards,
+    struggleCards,
+    masteryBreakdown,
     recentActivity: recentLogs.map((r) => ({
       at: r.createdAt.toISOString(),
       outcome: r.outcome,

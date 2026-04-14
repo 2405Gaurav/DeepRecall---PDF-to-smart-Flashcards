@@ -282,24 +282,55 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
                 </div>
               </div>
 
-              {/* struggle cards */}
+              {/* mastery breakdown across all decks */}
+              {analytics.masteryBreakdown && (
+                <div className="mt-8">
+                  <h3 className="flex items-center gap-2 text-base font-bold text-lab-ink">
+                    📊 Card status breakdown
+                  </h3>
+                  <p className="mt-1 text-xs text-lab-soft">How your cards are distributed across mastery levels.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-xl border border-sky-200 bg-sky-50/70 px-3 py-2.5 text-center">
+                      <p className="text-2xl font-black text-sky-700">{analytics.masteryBreakdown.new}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">New</p>
+                    </div>
+                    <div className="rounded-xl border border-orange-200 bg-orange-50/70 px-3 py-2.5 text-center">
+                      <p className="text-2xl font-black text-orange-700">{analytics.masteryBreakdown.learning}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600">Learning</p>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2.5 text-center">
+                      <p className="text-2xl font-black text-amber-700">{analytics.masteryBreakdown.familiar}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600">Familiar</p>
+                    </div>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2.5 text-center">
+                      <p className="text-2xl font-black text-emerald-700">{analytics.masteryBreakdown.mastered}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600">Mastered</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* struggle cards — now from dedicated query */}
               <div className="mt-8">
                 <h3 className="flex items-center gap-2 text-base font-bold text-lab-ink">
                   🧗 Struggle cards
                 </h3>
                 <p className="mt-1 text-xs text-lab-soft">Your hardest cards across all decks — the algorithm will show these more often.</p>
                 <ul className="mt-3 space-y-2">
-                  {analytics.topCards.filter(c => c.hardCount >= 2).length === 0 ? (
+                  {(analytics.struggleCards ?? []).length === 0 ? (
                     <li className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm">
                       <span className="text-xl">💪</span>
                       <span className="text-lab-soft">No struggle cards. You are making this look easy.</span>
                     </li>
                   ) : (
-                    analytics.topCards.filter(c => c.hardCount >= 2).slice(0, 5).map((c) => (
+                    (analytics.struggleCards ?? []).slice(0, 5).map((c) => (
                       <li key={c.id} className="rounded-xl border border-orange-100 bg-orange-50/50 px-4 py-3 text-sm leading-snug">
                         <span className="font-medium text-lab-ink line-clamp-2">{c.question}</span>
                         <span className="mt-1 block text-xs text-lab-soft">
                           {c.deckTitle} · <strong className="text-orange-600">{c.hardCount}</strong> times hard
+                          {c.masteryLevel && (
+                            <> · <span className="text-slate-500">{c.masteryLevel}</span></>
+                          )}
                         </span>
                       </li>
                     ))
@@ -307,22 +338,25 @@ export function ProfileClient({ displayName, childName, grade, username }: Profi
                 </ul>
               </div>
 
-              {/* strongest cards */}
+              {/* strongest cards — now from dedicated query */}
               <div className="mt-8">
                 <h3 className="flex items-center gap-2 text-base font-bold text-lab-ink">
                   <BookOpen className="h-5 w-5 text-lab-teal" aria-hidden />
                   Cards you&apos;re strongest on
                 </h3>
                 <ul className="mt-3 space-y-2">
-                  {analytics.topCards.length === 0 ? (
+                  {(analytics.strongCards ?? analytics.topCards ?? []).length === 0 ? (
                     <li className="text-sm text-lab-soft">Practice a few decks to see standouts here.</li>
                   ) : (
-                    analytics.topCards.map((c) => (
+                    (analytics.strongCards ?? analytics.topCards ?? []).map((c) => (
                       <li key={c.id} className="rounded-xl border border-lab-line/50 bg-lab-mint/30 px-4 py-3 text-sm leading-snug">
                         <span className="font-medium text-lab-ink line-clamp-2">{c.question}</span>
                         <span className="mt-1 block text-xs text-lab-soft">
                           {c.deckTitle} · <strong className="text-lab-teal-dark">{c.easyCount}</strong> easy ·{' '}
                           <strong className="text-orange-600">{c.hardCount}</strong> hard
+                          {c.masteryLevel && (
+                            <> · <span className="text-slate-500">{c.masteryLevel}</span></>
+                          )}
                         </span>
                       </li>
                     ))
