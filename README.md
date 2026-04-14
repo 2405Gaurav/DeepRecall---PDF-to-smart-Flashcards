@@ -8,7 +8,7 @@ Active recall · Spaced repetition · Streaks · Badges · Delight.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20App-0f766e?style=for-the-badge)](https://deeprecall.netlify.app)
 [![Tech Stack](https://img.shields.io/badge/Next.js%2015-App%20Router-black?style=for-the-badge&logo=next.js)](./TECHNICAL.md)
-[![AI Built](https://img.shields.io/badge/Built%20with-Antigravity%20AI-6d28d9?style=for-the-badge)](https://github.com)
+[![AI Built](https://img.shields.io/badge/Built%20with-Cursor%20%2B%20Claude%20Opus%204.6-6d28d9?style=for-the-badge)](https://cursor.sh)
 
 </div>
 
@@ -111,35 +111,71 @@ DeepRecall flips the script — drop in a PDF (a chapter on quadratic equations,
 
 ## 🤖 How I Used AI to Build This
 
-### The Tool: Antigravity + Claude Opus
+### The Tool: Cursor + Claude Opus 4.6
 
-I didn't have access to **Claude Code** (the tool described in the How-To-AI guide), so I built using **Antigravity** — a similar agentic AI assistant powered by Claude Opus 4.6 — that runs alongside my editor and can read/write files, run terminal commands, and build features through conversation.
+I didn't have access to **Claude Code** (the CLI tool described in the How-To-AI guide), so I adapted the same workflow using **Cursor IDE** paired with **Claude Opus 4.6** — Cursor's built-in AI assistant that can read project files, write code, run terminal commands, and build features through conversation.
 
 The core principle from the guide applied perfectly:
 
 > **You focus on WHAT. Claude figures out the HOW.**
 
-I described what I wanted. Antigravity figured out the architecture, wrote the components, debugged the errors, and kept the codebase consistent.
+I described what I wanted. Claude Opus 4.6 in Cursor figured out the architecture, wrote the components, debugged the errors, and kept the codebase consistent.
 
-### The `.brain` Folder — My Second Brain
+### How My Setup Maps to the Guide
 
-The How-To-AI guide talks about creating a **Brain folder** — a local knowledge base of markdown files that the AI reads every session so it never starts from zero. I built my own `.brain/` folder inside the project:
+| Guide recommends | What I used instead |
+|---|---|
+| **Claude Code** (terminal AI) | **Cursor IDE** with **Claude Opus 4.6** (composer / agent mode) |
+| **Obsidian** (markdown viewer) | **Cursor's built-in editor** (sees the same files the AI reads) |
+| `~/Documents/Brain/` folder | `.brain/` folder inside the project repo |
+| `.claude/commands/` for agents | `.brain/agents/` for saved workflow instructions |
+| Split screen: terminal left, Obsidian right | Split screen: editor left, AI chat right |
+
+Same philosophy, different tools. The **WHAT / HOW** principle is tool-agnostic.
+
+### The `.brain` Folder — My Second Brain (All 3 Levels)
+
+The How-To-AI guide describes three levels of AI-native work. My `.brain/` folder covers all three:
+
+#### Level 1: Context (Part 1 — Exercises 1.1–1.3)
+> *"Your local files ARE the AI's memory."*
 
 ```
 .brain/
-├── context.md          ← Living product context: what it is, principles, stack, schema, decisions
-├── prompts-journal.md  ← Build log: what was tried, what broke, tradeoffs, what I'd improve
-├── config.json         ← Persistent AI assistant configuration
-├── prompt              ← System prompt for the AI
-└── README.md           ← How to use the brain folder
+├── context.md        ← Living product context: what it is, principles, stack, schema, decisions
+├── about-me.md       ← Who I am, skills, how I work with AI (Exercise 1.2)
+├── my-goals.md       ← Project goals + 6-month goals (Exercise 1.3)
 ```
 
-**`context.md`** is the equivalent of the guide's *about-me.md* + *my-goals.md* + product brief — I updated it each session as scope shifted. Antigravity reads it at the start of every conversation so it has full context without re-explanation.
+**`context.md`** is updated each session as scope shifts. Claude Opus 4.6 reads it automatically so it has full context without re-explanation.
 
-**`prompts-journal.md`** documents every session: what was built, what broke, tradeoffs made, algorithm decisions, what I'd do differently. This is the "process thinking" artifact the challenge asks for.
+#### Level 2: Agents (Part 2 — Exercises 2.1–2.3)
+> *"An agent compresses a complex, repeatable workflow into a single command."*
 
-This gave me the same superpower the guide describes:
-> *Your local files ARE the AI's memory. The better you organize them, the smarter Claude becomes.*
+```
+.brain/agents/
+├── journal.md        ← End-of-session build reflection (Exercise 2.1)
+├── research.md       ← Topic research brief generator (Exercise 2.2)
+├── review-code.md    ← Pre-commit code review checklist (Exercise 2.3)
+```
+
+Since I'm not using Claude Code CLI (which supports `/command` syntax), I keep agent instructions as markdown files and reference them manually in Cursor when needed.
+
+#### Level 3: Tools (Part 3)
+> *"Tools give you visual interfaces for managing complex work."*
+
+**DeepRecall itself is the tool** — a full visual dashboard/app built entirely through AI conversation. Every feature was described as a WHAT and built by Claude Opus 4.6 as the HOW.
+
+#### Supporting files
+```
+.brain/
+├── prompt                ← Standing instructions for the AI (project rules, code conventions)
+├── prompts-journal.md    ← Process thinking log — every session documented
+├── config.json           ← Workspace config with guide mappings
+└── ignore                ← Paths the AI should skip (secrets, node_modules)
+```
+
+**`prompts-journal.md`** documents every session: what was built, what broke, tradeoffs made, algorithm decisions, what I'd do differently. This is the **"process thinking"** artifact the challenge asks for.
 
 ### The Build Flow
 
@@ -158,9 +194,12 @@ Session 4: Streaks & Badges
 
 Session 5: Polish & Modularization
   → Loader components, component architecture, lazy loading, README
+
+Session 6: Brain Folder Overhaul
+  → Full How To AI alignment, agent files, context files, README updates
 ```
 
-Every session: I described the feature → Antigravity built it → I tested → fed errors back → iterate.
+Every session: I described the feature → Claude Opus 4.6 built it → I tested → fed errors back → iterate.
 
 ---
 

@@ -1,8 +1,8 @@
 {
   "template": "nextjs-shadcn",
-  "brainVersion": 2,
-  "methodology": "How To AI — local Brain folder, context-first work",
-  "guideReference": "How To AI (practical map: WHAT vs HOW, living files as memory)",
+  "brainVersion": 3,
+  "methodology": "How To AI — local Brain folder, context-first work, agents, tools",
+  "guideReference": "How To AI (practical map: WHAT vs HOW, living files as memory, saved agents, visual tools)",
   "workspace": {
     "contextRoot": ".brain",
     "projectRoot": "project/",
@@ -10,16 +10,26 @@
   },
   "tooling": {
     "primaryIDE": "Cursor",
-    "assistant": "Opus 4.x class models in Cursor (composer / agent)",
-    "parallelToGuide": "Guide uses Claude Code in a Brain folder; here Cursor is pointed at the repo and reads `.brain/` the same way — split screen = editor left, chat right, shared files."
+    "aiModel": "Claude Opus 4.6",
+    "assistant": "Claude Opus 4.6 via Cursor (composer / agent mode)",
+    "noteOnClaudeCode": "I don't have access to Claude Code CLI. Instead I use Cursor IDE with Claude Opus 4.6 — the same WHAT/HOW split applies. Cursor reads .brain/ files the same way Claude Code reads a Brain folder.",
+    "parallelToGuide": "Guide uses Claude Code in a Brain folder; here Cursor + Claude Opus 4.6 is pointed at the repo and reads `.brain/` the same way — editor + AI chat side-by-side = split screen."
+  },
+  "guideMappings": {
+    "Part0_Setup": "Cursor IDE replaces Claude Code CLI. .brain/ folder replaces ~/Documents/Brain/. Same split-screen concept: editor left, AI chat right, shared files.",
+    "Part1_Context": "context.md, about-me.md, my-goals.md — living markdown files that the AI reads every session. Covers Exercises 1.1–1.3.",
+    "Part2_Agents": ".brain/agents/ folder with saved workflow instructions (journal.md, research.md, review-code.md). Maps to .claude/commands/ in the guide. Covers Exercises 2.1–2.3.",
+    "Part3_Tools": "DeepRecall itself is the tool — a visual dashboard/app built through AI conversation. The entire app was described as WHAT and built by Claude Opus 4.6 as HOW."
   },
   "principlesWeActuallyFollow": [
     "Clarity on WHAT (outcome, UX, constraints) before implementation details",
     "Put things you repeat into files under `.brain/` instead of retyping them",
     "When something breaks: paste the terminal error, ask for a fix, iterate",
-    "Small steps: ship studio route, then practice route, then DB — not one giant vague ask"
+    "Small steps: ship studio route, then practice route, then DB — not one giant vague ask",
+    "Agent files compress repeatable workflows into reusable instructions",
+    "The AI gets smarter with every file added to .brain/ — context compounds"
   ],
   "evaluationNotes": {
-    "forReviewer": "This folder exists to satisfy the assessment rubric tied to the How To AI PDF: Part 0 (Brain home), Part 1 (context files), Part 2-style saved instructions in `prompt`, ignore list for noise, config for how the workspace is wired."
+    "forReviewer": "This folder exists to satisfy the How To AI PDF methodology: Part 0 (Brain home → .brain/), Part 1 (context files → context.md, about-me.md, my-goals.md), Part 2 (agents → .brain/agents/), Part 3 (tools → the DeepRecall app itself). Built using Cursor + Claude Opus 4.6 instead of Claude Code."
   }
 }

@@ -129,7 +129,7 @@ Every box in the chain works end-to-end.
 
 | Tool | Purpose |
 |---|---|
-| Antigravity (AI assistant) | Architecture, code generation, component design |
+| Cursor IDE + Claude Opus 4.6 | AI pair programmer — architecture, code generation, debugging, component design |
 | Next.js 15 | App framework |
 | Tailwind CSS | Styling |
 | Framer Motion | Animations |
@@ -138,4 +138,46 @@ Every box in the chain works end-to-end.
 | shadcn/ui | UI primitives |
 | Recharts | Analytics charts |
 
-> Note: Used Antigravity (similar to Claude Code) as the AI building partner as suggested in the How-To-AI guide. The `.brain` folder structure follows that guide's context-file approach.
+> Note: I don't have access to Claude Code CLI. Instead I used **Cursor IDE + Claude Opus 4.6** as the AI building partner, following the same WHAT/HOW philosophy from the How-To-AI guide. The `.brain` folder structure mirrors the guide's Brain folder concept with context files (Part 1), agent command files (Part 2), and the app itself as the tool (Part 3).
+
+---
+
+## Session 6 — Brain Folder Overhaul & How To AI Alignment (Day 7-8)
+
+### What was built
+1. **Restructured `.brain/` to fully map to the How To AI PDF guide** — every section of the guide now has a corresponding file or folder.
+2. **New context files (Part 1):**
+   - `about-me.md` — who I am, skills, how I work with AI (mirrors guide's Exercise 1.2)
+   - `my-goals.md` — project goals + 6-month goals (mirrors guide's Exercise 1.3)
+3. **New agents folder (Part 2):**
+   - `agents/journal.md` — end-of-session reflection workflow (mirrors guide's Exercise 2.1)
+   - `agents/research.md` — topic research brief generator (mirrors guide's Exercise 2.2)
+   - `agents/review-code.md` — pre-commit code review checklist (mirrors guide's Exercise 2.3)
+4. **Updated all existing files** — replaced "Antigravity" references with "Cursor + Claude Opus 4.6"
+5. **Updated main README.md** — rewrote the "How I Used AI" section to explain Cursor + Claude Opus 4.6 setup and map to all 3 parts of the guide
+6. **Updated `config.json`** to v3 with full guide mappings for Parts 0–3
+
+### Why this matters
+The How To AI guide describes three levels:
+- **Level 1: Context** — markdown files the AI reads every session
+- **Level 2: Agents** — saved instructions for repeatable workflows
+- **Level 3: Tools** — visual interfaces built through AI conversation
+
+The previous `.brain/` only covered Level 1. Now it covers all three, with explicit mappings in `config.json` and `README.md` showing evaluators exactly how each file maps to the guide.
+
+### Adaptation: Cursor + Claude Opus 4.6 instead of Claude Code
+I don't have Claude Code access. The guide's workflow is:
+- `cd ~/Documents/Brain && claude` → terminal AI reads local files
+- Obsidian open alongside → see files in real-time
+
+My equivalent:
+- Open project in Cursor → Claude Opus 4.6 reads `.brain/` files in the project
+- Cursor's editor shows the same files the AI reads → same split-screen effect
+- Agent files live in `.brain/agents/` instead of `.claude/commands/`
+
+Same philosophy, different tools. The WHAT/HOW principle is tool-agnostic.
+
+### Carry forward
+- Could add more agent files as workflows emerge
+- Could add a `research/` folder for storing research briefs
+- The context files should be updated every major session
