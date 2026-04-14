@@ -162,6 +162,9 @@ Session 5: Polish & Modularization
 
 Session 6: Brain Folder Overhaul
   → Full How To AI alignment, agent files, context files, README updates
+
+Session 7: Card Status Consistency
+  → Intent-based mastery (not interval), split analytics queries, profile fix
 ```
 
 Every session: I described the feature → Claude Opus 4.6 built it → I tested → fed errors back → iterate.

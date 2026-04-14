@@ -28,43 +28,33 @@ function clampInterval(days: number): number {
   return Math.min(MAX_INTERVAL_DAYS, Math.max(1, Math.round(days)));
 }
 
-/** Determine mastery level from interval + outcome + user intent.
- *  The outcome parameter lets the user's explicit choice act as a minimum floor —
- *  so a NEW card marked "Mastered" won't get stuck at LEARNING just because
- *  the interval is only 3 days on first review. */
+/**
+ * Determine mastery level from the user's explicit outcome choice.
+ *
+ * The user's self-assessment IS the mastery level — not the interval.
+ * Intervals control *when* a card comes back (scheduling), but the
+ * mastery label should match what the user actually selected:
+ *   - "I've got it!" (MASTERED/EASY) → MASTERED
+ *   - "Getting there" (FAMILIAR)     → FAMILIAR
+ *   - "Still learning" (LEARNING/HARD) → LEARNING
+ *
+ * This keeps the studio deck list, profile page, and practice session
+ * all showing the same consistent status for each card.
+ */
 function computeMasteryLevel(
-  interval: number,
+  _interval: number,
   wasHard: boolean,
   outcome?: ReviewOutcomeLiteral,
 ): MasteryLevelLiteral {
-  if (wasHard) return interval < 4 ? ML.LEARNING : ML.FAMILIAR;
+  // hard/learning outcomes always stay at LEARNING
+  if (wasHard) return ML.LEARNING;
 
-  // interval-based level (pure SM-2)
-  let level: MasteryLevelLiteral;
-  if (interval > 14) level = ML.MASTERED;
-  else if (interval >= 4) level = ML.FAMILIAR;
-  else level = ML.LEARNING;
+  // direct mapping from user intent to mastery level
+  if (outcome === RO.MASTERED || outcome === RO.EASY) return ML.MASTERED;
+  if (outcome === RO.FAMILIAR) return ML.FAMILIAR;
 
-  // user intent floor — if the user explicitly said MASTERED or FAMILIAR
-  // but the interval is still small (first few reviews), bump the level
-  if (outcome === RO.MASTERED && masteryOrd(level) < masteryOrd(ML.MASTERED)) {
-    level = ML.FAMILIAR; // at minimum FAMILIAR; full MASTERED needs interval >14
-  }
-  if (outcome === RO.FAMILIAR && masteryOrd(level) < masteryOrd(ML.FAMILIAR)) {
-    level = ML.FAMILIAR;
-  }
-
-  return level;
-}
-
-function masteryOrd(l: MasteryLevelLiteral): number {
-  switch (l) {
-    case ML.NEW: return 0;
-    case ML.LEARNING: return 1;
-    case ML.FAMILIAR: return 2;
-    case ML.MASTERED: return 3;
-    default: return 0;
-  }
+  // fallback for LEARNING or undefined
+  return ML.LEARNING;
 }
 
 export interface ReviewPlan {

@@ -29,8 +29,8 @@ The product name is **DeepRecall**. It's not math-only — it handles any subjec
 ## Product principles
 
 1. **Ingestion quality** — Gemini prompts aim for comprehensive, teacher-like cards (concepts, definitions, relationships, edge cases, examples); depth over shallow volume. Three preset levels: light (6-12), balanced (15-28), deep (30-50).
-2. **Spaced repetition** — `lib/spaced-repetition.ts`: SM-2-inspired day intervals; review queue orders **due first** (most overdue first), then upcoming.
-3. **Progress / mastery** — NEW → LEARNING → FAMILIAR → MASTERED; deck + profile surfaces due counts and mastery without overwhelming.
+2. **Spaced repetition** — `lib/spaced-repetition.ts`: SM-2-inspired day intervals for scheduling. **Mastery level is set directly from user intent** (MASTERED→MASTERED, FAMILIAR→FAMILIAR, LEARNING→LEARNING) — intervals only control *when* a card reappears, not the status label. This keeps studio, profile, and practice all consistent.
+3. **Progress / mastery** — NEW → LEARNING → FAMILIAR → MASTERED; profile shows `masteryBreakdown` (per-level counts), `strongCards` (high easy, low hard), and `struggleCards` (hardCount ≥ 2, separate query). Deck list in studio shows correct per-level progress bars.
 4. **Deck management** — Search, sort (due first, then last practiced), emoji mastery indicators. Scales to dozens of decks.
 5. **Streaks & badges** — Daily practice streaks tracked in DB. Badges at 3, 5, 7, 10, 15, 21, 30, 50, 100 day milestones. Total-days badges too. Trophy wall on profile.
 6. **Delight** — Confetti, 3D flips, streak counter, mascot emoji, floating particles, rainbow progress, bouncy micro-interactions, animated loader with rotating tips.
@@ -79,6 +79,9 @@ The product name is **DeepRecall**. It's not math-only — it handles any subjec
 - `.env.example` uses **placeholder values only** — security requirement.
 - Streak tracking happens alongside card review (non-blocking) — if streak DB write fails, card save still succeeds.
 - CueMathLoader component used consistently across all loading states.
+- **Mastery level = user intent, not interval** — `computeMasteryLevel()` directly maps the user's practice choice (MASTERED/FAMILIAR/LEARNING) to the card's mastery level. Intervals only control when the card reappears (scheduling), not the status label. This was a critical fix — the old interval-based system caused status mismatches across studio, profile, and practice.
+- **Separate analytics queries** — `user-analytics.ts` runs independent DB queries for `strongCards` (easyCount ≥ 1, hardCount < 2) and `struggleCards` (hardCount ≥ 2). Old approach used a single `topCards` query sorted by easyCount DESC, which never surfaced struggle cards.
+- **Profile uses `ProfileClientBento`** — the actual `/profile` route renders `ProfileClientBento.tsx`, not `ProfileClient.tsx`. Both are kept in sync but the Bento version is the live one.
 
 ---
 

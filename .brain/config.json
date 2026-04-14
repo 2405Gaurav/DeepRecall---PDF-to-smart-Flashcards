@@ -1,7 +1,7 @@
 {
   "template": "nextjs-shadcn",
-  "brainVersion": 3,
-  "methodology": "How To AI — local Brain folder, context-first work, agents, tools",
+  "brainVersion": 4,
+  "methodology": "How To AI — local Brain folder, context-first work, agents, tools. Session 7: intent-based mastery fix.",
   "guideReference": "How To AI (practical map: WHAT vs HOW, living files as memory, saved agents, visual tools)",
   "workspace": {
     "contextRoot": ".brain",

@@ -181,3 +181,66 @@ Same philosophy, different tools. The WHAT/HOW principle is tool-agnostic.
 - Could add more agent files as workflows emerge
 - Could add a `research/` folder for storing research briefs
 - The context files should be updated every major session
+
+---
+
+## Session 7 — Card Status Consistency Fix (Day 8-9)
+
+### The problem
+After practicing cards, the status shown across the app was inconsistent:
+- **Practice session**: User clicks "I've got it! ⭐" (MASTERED)
+- **Level-up overlay**: Shows "This card is now **Familiar**" (wrong!)
+- **Studio deck list**: Shows `9 new · 9 learning · 0 familiar · 0 mastered` (all stuck in learning)
+- **Profile**: Only shows "Cards you're strongest on" — never shows struggle cards
+
+Three separate bugs, one root cause.
+
+### Root cause analysis
+
+**Bug 1: SM-2 mastery was interval-based, not intent-based.**
+`computeMasteryLevel()` derived the mastery level purely from the scheduling interval:
+- interval > 14 → MASTERED
+- interval >= 4 → FAMILIAR
+- else → LEARNING
+
+A NEW card rated MASTERED gets `base = max(3, 1*2) = 3` days interval. Then `computeMasteryLevel(3, false)` → **LEARNING**. The user said "I've got it!" but the card stayed at LEARNING because the interval was only 3 days. This single bug caused the mismatch everywhere.
+
+**Bug 2: Profile used wrong component.**
+The `/profile` route renders `ProfileClientBento.tsx`, not `ProfileClient.tsx`. Initial fixes went to the wrong file — a classic "which component is actually mounted?" mistake.
+
+**Bug 3: Single query for both strong and struggle cards.**
+`getUserAnalytics()` fetched one `topCards` list sorted by `easyCount DESC`. Client-side filtering for `hardCount >= 2` never found anything because the query only returned high-easyCount cards. Struggle cards were invisible.
+
+### What was fixed
+
+1. **`lib/spaced-repetition.ts`** — `computeMasteryLevel()` now directly maps user intent to mastery level:
+   - MASTERED/EASY outcome → `masteryLevel = MASTERED`
+   - FAMILIAR outcome → `masteryLevel = FAMILIAR` 
+   - LEARNING/HARD outcome → `masteryLevel = LEARNING`
+   
+   The interval still controls scheduling — it hasn't changed. Only the mastery *label* now matches what the user selected.
+
+2. **`lib/user-analytics.ts`** — Split into three separate queries:
+   - `strongCards`: `easyCount >= 1 AND hardCount < 2`, sorted by easyCount DESC
+   - `struggleCards`: `hardCount >= 2`, sorted by hardCount DESC
+   - `masteryBreakdown`: per-level counts (`new`, `learning`, `familiar`, `mastered`)
+
+3. **`components/profile/ProfileClientBento.tsx`** — Updated to use new `struggleCards`, `strongCards`, and `masteryBreakdown` fields. Added mastery breakdown grid (NEW/LEARNING/FAMILIAR/MASTERED counts).
+
+4. **`components/profile/ProfileClient.tsx`** — Same updates for consistency (backup component).
+
+### Key insight
+The SM-2 algorithm has two orthogonal concerns that were conflated:
+- **Scheduling** (when does the card come back?) — controlled by interval
+- **Status labeling** (what level is this card?) — should reflect user assessment
+
+The original code used interval for both. The fix separates them: intervals for scheduling, user intent for labeling.
+
+### What broke during the fix
+- First attempt: Added an "intent floor" that capped MASTERED at FAMILIAR. Still wrong — user said MASTERED, card showed FAMILIAR. Had to fully commit to direct mapping.
+- Fixed `ProfileClient.tsx` first (unused) instead of `ProfileClientBento.tsx` (actual). Always check which component the route renders!
+
+### Tradeoffs
+- Previously-reviewed cards still have their old (wrong) mastery levels in the DB. Would need a migration script to retroactively fix them based on review log history.
+- Direct intent mapping means a card can be "MASTERED" with only interval=3 days. This is fine conceptually (the user knows it) but means the card will come back sooner than a traditionally-mastered card. The scheduling system will naturally extend the interval on subsequent correct reviews.
+
