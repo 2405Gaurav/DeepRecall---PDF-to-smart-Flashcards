@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🧠 DeepRecall
-### *by Cuemath — AI Builder Challenge, Problem 1: The Flashcard Engine*
+**The Flashcard Engine**
 
 **Turn any PDF into a smart, practice-ready flashcard deck.**  
 Active recall · Spaced repetition · Streaks · Badges · Delight.
