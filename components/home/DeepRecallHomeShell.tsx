@@ -90,7 +90,7 @@ function HomeInner() {
   );
 }
 
-export function CuemathHomeShell() {
+export function DeepRecallHomeShell() {
   return (
     <Suspense
       fallback={<div className="min-h-screen animate-pulse bg-lab-grid" aria-hidden />}

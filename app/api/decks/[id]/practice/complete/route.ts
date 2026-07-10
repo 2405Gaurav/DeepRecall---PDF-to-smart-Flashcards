@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
 import { recordPracticeDay } from '@/lib/streaks';
+import { invalidateDashboardCache } from '@/lib/redis';
 
 export const runtime = 'nodejs';
 
@@ -78,6 +79,8 @@ export async function POST(
     }
 
     const streak = await recordPracticeDay(sessionUserId);
+
+    await invalidateDashboardCache(sessionUserId);
 
     return NextResponse.json({ streak });
   } catch (error) {

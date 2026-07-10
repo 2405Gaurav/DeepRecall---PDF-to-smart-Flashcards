@@ -10,7 +10,7 @@ import { useConfetti } from '@/components/ui/Confetti';
 import { StreakCounter, Mascot } from '@/components/ui/StreakCounter';
 import { MiniParticles } from '@/components/ui/FloatingParticles';
 import { NewBadgeCelebration } from '@/components/ui/BadgeDisplay';
-import { CueMathLoader } from '@/components/ui/CueMathLoader';
+import { DeepRecallLoader } from '@/components/ui/DeepRecallLoader';
 
 type Outcome = 'LEARNING' | 'FAMILIAR' | 'MASTERED';
 
@@ -365,7 +365,7 @@ export function PracticeSession({ deckId }: { deckId: string }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [goPrev, goNext, showAnswer, revealAnswer]);
 
-  if (loading) return <CueMathLoader message="Loading your cards…" fullScreen />;
+  if (loading) return <DeepRecallLoader message="Loading your cards…" fullScreen />;
 
   if (error || !current) {
     return (

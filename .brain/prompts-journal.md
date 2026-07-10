@@ -93,7 +93,7 @@ The challenge specifically says "Flashcard apps are notoriously boring. Yours do
 ## Session 5 — Polish & Submission Prep (Day 6-7)
 
 ### What was built
-1. **CueMathLoader** — reusable animated loader with cycling emojis, gradient ring, bouncing dots, rotating messages. Used across ALL loading states for consistency.
+1. **DeepRecallLoader** — reusable animated loader with cycling emojis, gradient ring, bouncing dots, rotating messages. Used across ALL loading states for consistency.
 2. **UploadLoader** — specialized loader for PDF processing with stage progression and rotating tips ("AI is creating smart flashcards...", "Building questions that make you think...")
 3. **Interactive feature showcase** — homepage section where clicking a feature on the right changes the image on the left with smooth AnimatePresence transitions.
 4. **AI-generated images** — 4 illustrations of children studying (flashcards, spaced repetition, progress tracking, badges) for the feature showcase.

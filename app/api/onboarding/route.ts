@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
+import { invalidateDashboardCache } from '@/lib/redis';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
         onboardingCompletedAt: now,
       },
     });
+
+    await invalidateDashboardCache(userId);
 
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (error) {

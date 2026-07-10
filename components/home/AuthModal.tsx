@@ -142,7 +142,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
         className="max-w-[440px] w-[calc(100vw-1.5rem)] gap-0 overflow-hidden rounded-2xl border-2 border-lab-teal/50 p-0 shadow-2xl sm:rounded-2xl"
       >
         <DialogTitle className="sr-only">
-          {mode === 'login' ? 'Log in to Cuemath' : 'Sign up for Cuemath'}
+          {mode === 'login' ? 'Log in to DeepRecall' : 'Sign up for DeepRecall'}
         </DialogTitle>
         <DialogDescription className="sr-only">
           {mode === 'login'
@@ -163,7 +163,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
           <div className="flex items-center justify-between pr-10">
             <Rocket className="h-5 w-5 text-white/95" aria-hidden />
             <span className="font-display text-[10px] font-bold tracking-widest text-white/90">
-              DEEPRECALL <span className="text-white/50">by Cuemath</span>
+              DEEPRECALL <span className="text-white/50">by DeepRecall</span>
             </span>
             <UserRound className="h-5 w-5 text-white/95" aria-hidden />
           </div>
@@ -229,7 +229,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signup' }: AuthMo
                 {/* test credentials for team */}
                 {mode === 'login' && (
                   <div className="mt-4 rounded-xl border-2 border-dashed border-lab-teal/30 bg-lab-mint/40 px-4 py-3 text-center">
-                    <p className="text-xs font-bold text-lab-teal-dark">👋 Welcome Team Cuemath!</p>
+                    <p className="text-xs font-bold text-lab-teal-dark">👋 Welcome Team DeepRecall!</p>
                     <p className="mt-1 text-[11px] text-lab-soft">
                       Test credentials: <strong className="text-lab-ink">test123</strong> / <strong className="text-lab-ink">pass123</strong>
                     </p>

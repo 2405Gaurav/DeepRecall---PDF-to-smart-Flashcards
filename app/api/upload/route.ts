@@ -5,18 +5,20 @@ import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
 import { generateFlashcards, normalizeCardType, type CardCountPreset } from '@/lib/gemini';
 import { DS } from '@/lib/db-enums';
+import { invalidateDashboardCache } from '@/lib/redis';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
 /**
  * Phase 2 — runs in the background after the HTTP response is sent.
- * Generates flashcards with CuemathsAI and saves them to the deck.
+ * Generates flashcards with DeepRecallAI and saves them to the deck.
  */
 async function generateAndSaveCards(
   deckId: string,
   text: string,
-  cardPreset: CardCountPreset
+  cardPreset: CardCountPreset,
+  userId: string
 ): Promise<void> {
   try {
     const rawCards = await generateFlashcards(text, cardPreset);
@@ -38,6 +40,8 @@ async function generateAndSaveCards(
         data: { status: DS.READY },
       });
     });
+
+    await invalidateDashboardCache(userId);
 
     console.log(`[upload] Deck ${deckId} — READY with ${rawCards.length} cards`);
   } catch (err) {
@@ -110,7 +114,7 @@ export async function POST(request: NextRequest) {
     // ── Return response IMMEDIATELY — user is redirected to deck page now ────
     // Phase 2 runs AFTER the response is sent (Next.js 15.1+ after())
     after(async () => {
-      await generateAndSaveCards(deck.id, text, cardPreset);
+      await generateAndSaveCards(deck.id, text, cardPreset, u.id);
     });
 
     return NextResponse.json(

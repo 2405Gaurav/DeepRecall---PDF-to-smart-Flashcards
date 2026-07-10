@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CuemathHomeShell } from '@/components/home/CuemathHomeShell';
+import { DeepRecallHomeShell } from '@/components/home/DeepRecallHomeShell';
 
 export const metadata: Metadata = {
   title: 'DeepRecall — PDF to Smart Flashcards',
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <CuemathHomeShell />;
+  return <DeepRecallHomeShell />;
 }

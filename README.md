@@ -44,7 +44,7 @@ Drop any PDF — textbook chapter, class notes, revision sheets — and get back
 ## 🚀 Core Features
 
 ### 📄 Ingestion — PDF → Smart Flashcards
-- Drop any text-based PDF and let **CuemathsAI (powered by Google Gemini)** extract it into comprehensive cards
+- Drop any text-based PDF and let **DeepRecallAI (powered by Google Gemini)** extract it into comprehensive cards
 - **3 quality presets**: Light (6–12 cards), Balanced (15–28), Deep (30–50)
 - Cards cover: key concepts, definitions, relationships, edge cases, worked examples
 - Not shallow bullet dumps — teacher-quality, recall-heavy questions
@@ -98,7 +98,7 @@ Drop any PDF — textbook chapter, class notes, revision sheets — and get back
 |---|---|
 | 🎊 **Confetti system** | Colorful shapes fire on mastery & completion |
 | 🌊 **Floating particles** | Ambient emoji particles drift across the hero section |
-| 🌀 **CueMathLoader** | Consistent animated loader with cycling emojis + rotating tips |
+| 🌀 **DeepRecallLoader** | Consistent animated loader with cycling emojis + rotating tips |
 | 🧩 **Modular architecture** | `studio/ui/`, `profile/ui/` sub-component folders with barrel exports |
 | 🌐 **Responsive design** | Works on mobile, tablet, and desktop |
 | 🔐 **Session auth** | httpOnly JWT cookies — no OAuth complexity, friendlier for kids |
@@ -203,7 +203,7 @@ This test account has a **16-day streak**, **2 badges earned** (⭐ One Week Str
 
 <div align="center">
 
-Built by Gaurav · Cuemath AI Builder Challenge 2026
+Built by Gaurav · DeepRecall AI Builder Challenge 2026
 
 *"Flashcard apps are notoriously boring. Yours doesn't have to be."*
 

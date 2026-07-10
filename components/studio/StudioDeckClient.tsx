@@ -13,7 +13,7 @@ import { DeckStatCard } from '@/components/studio/ui/DeckStatCard';
 import { FlashcardItem, ShowAnswersToggle } from '@/components/studio/ui/FlashcardItem';
 import { DeckActionsBar } from '@/components/studio/ui/DeckActionsBar';
 import { SkeletonFlashcard } from '@/components/studio/ui/SkeletonFlashcard';
-import { CueMathLoader } from '@/components/ui/CueMathLoader';
+import { DeepRecallLoader } from '@/components/ui/DeepRecallLoader';
 
 const PAGE_SIZE = 5;
 const POLL_INTERVAL_MS = 2500;
@@ -75,7 +75,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
       // safety cap — don't poll forever
       if (pollTickRef.current > MAX_POLL_TICKS) {
         stopPolling();
-        setGenerationError('Generation timed out. CuemathsAI took too long — try uploading again.');
+        setGenerationError('Generation timed out. DeepRecallAI took too long — try uploading again.');
         setDeckStatus('FAILED');
         setLoading(false);
         return;
@@ -166,7 +166,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <CueMathLoader message="Loading deck…" />
+        <DeepRecallLoader message="Loading deck…" />
       </div>
     );
   }
@@ -230,7 +230,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                ✨ CuemathsAI is generating your flashcards…
+                ✨ DeepRecallAI is generating your flashcards…
               </motion.span>
             </p>
           </div>
@@ -252,7 +252,7 @@ export function StudioDeckClient({ deckId }: { deckId: string }) {
                 🧠
               </motion.div>
               <div>
-                <p className="text-sm font-bold text-lab-ink">CuemathsAI is reading your PDF</p>
+                <p className="text-sm font-bold text-lab-ink">DeepRecallAI is reading your PDF</p>
                 <p className="text-xs text-lab-soft">
                   Building ~{skeletonCount} teacher-quality flashcards. This usually takes 10–30 seconds.
                 </p>

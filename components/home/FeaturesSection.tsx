@@ -63,7 +63,7 @@ export function FeaturesSection() {
           <div>
             <h2 className="font-display text-base font-bold text-lab-teal-dark md:text-lg">DeepRecall Flashcard Lab</h2>
             <p className="mt-3 text-base leading-relaxed text-lab-soft md:text-lg">
-              Built by Cuemath, with a <strong className="text-lab-ink">distinct teal & coral</strong> palette for
+              Built by DeepRecall, with a <strong className="text-lab-ink">distinct teal & coral</strong> palette for
               calmer study sessions. Sign up once, then use <strong>Your studio</strong>{' '}
               to upload PDFs, review cards, and see your growth over time.
             </p>

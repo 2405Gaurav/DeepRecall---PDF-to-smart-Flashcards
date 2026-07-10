@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { readSessionUserId } from '@/lib/session-cookie';
 import { RO, type ReviewOutcomeLiteral } from '@/lib/db-enums';
 import { planReviewUpdate } from '@/lib/spaced-repetition';
+import { invalidateDashboardCache } from '@/lib/redis';
 import type { ReviewOutcome } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -102,6 +103,10 @@ export async function PATCH(
         },
       });
     });
+
+    if (ownerMatch && sessionUserId) {
+      await invalidateDashboardCache(sessionUserId);
+    }
 
     // return session summary data alongside the card
     return NextResponse.json({

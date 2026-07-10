@@ -4,7 +4,7 @@
 
 ## This project (DeepRecall)
 
-1. **Win the Cuemath AI Builder Challenge** — deliver a polished, delightful flashcard engine
+1. **Win the DeepRecall AI Builder Challenge** — deliver a polished, delightful flashcard engine
 2. **Demonstrate AI-native workflow** — show evaluators how I used AI as a true building partner, not just a code generator
 3. **Build something kids would actually use** — not a tech demo, a real product with delight
 4. **Learn full-stack development deeply** — Next.js 15, Prisma, serverless databases, API design

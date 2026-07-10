@@ -1,12 +1,12 @@
-# DeepRecall — Cuemath Flashcard Engine
+# DeepRecall — DeepRecall Flashcard Engine
 
 > Living context file. Updated every session so the AI assistant doesn't argue with stale assumptions.
 
 ## What this product is
 
-A flashcard engine that turns **any PDF** into a smart, practice-ready deck of flashcards — built for **Cuemath's AI Builder challenge** (Problem 1: The Flashcard Engine).
+A flashcard engine that turns **any PDF** into a smart, practice-ready deck of flashcards — built for **DeepRecall's AI Builder challenge** (Problem 1: The Flashcard Engine).
 
-The product name is **DeepRecall**. It's not math-only — it handles any subject (French Revolution, biology, quadratic equations). The visual language borrows Cuemath's calm **teal & coral lab** palette but the product stands alone.
+The product name is **DeepRecall**. It's not math-only — it handles any subject (French Revolution, biology, quadratic equations). The visual language borrows DeepRecall's calm **teal & coral lab** palette but the product stands alone.
 
 **North star**: Long-term retention over cramming — **active recall** + **spaced repetition** + **honest progress** + **deck management at scale** + a lot of **delight**.
 
@@ -78,7 +78,7 @@ The product name is **DeepRecall**. It's not math-only — it handles any subjec
 - Navbar must not pass server lambdas into client components.
 - `.env.example` uses **placeholder values only** — security requirement.
 - Streak tracking happens alongside card review (non-blocking) — if streak DB write fails, card save still succeeds.
-- CueMathLoader component used consistently across all loading states.
+- DeepRecallLoader component used consistently across all loading states.
 - **Mastery level = user intent, not interval** — `computeMasteryLevel()` directly maps the user's practice choice (MASTERED/FAMILIAR/LEARNING) to the card's mastery level. Intervals only control when the card reappears (scheduling), not the status label. This was a critical fix — the old interval-based system caused status mismatches across studio, profile, and practice.
 - **Separate analytics queries** — `user-analytics.ts` runs independent DB queries for `strongCards` (easyCount ≥ 1, hardCount < 2) and `struggleCards` (hardCount ≥ 2). Old approach used a single `topCards` query sorted by easyCount DESC, which never surfaced struggle cards.
 - **Profile uses `ProfileClientBento`** — the actual `/profile` route renders `ProfileClientBento.tsx`, not `ProfileClient.tsx`. Both are kept in sync but the Bento version is the live one.
@@ -91,7 +91,7 @@ The product name is **DeepRecall**. It's not math-only — it handles any subjec
 
 **3D CSS helpers**: `.perspective-600`, `.preserve-3d`, `.backface-hidden`, `.rotate-y-180`.
 
-**Custom components**: `Confetti.tsx`, `FloatingParticles.tsx`, `StreakCounter.tsx`, `BadgeDisplay.tsx`, `CueMathLoader.tsx`.
+**Custom components**: `Confetti.tsx`, `FloatingParticles.tsx`, `StreakCounter.tsx`, `BadgeDisplay.tsx`, `DeepRecallLoader.tsx`.
 
 ---
 

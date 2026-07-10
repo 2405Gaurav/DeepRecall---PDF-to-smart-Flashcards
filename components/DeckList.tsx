@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Search, Library, Sparkles, SortAsc } from 'lucide-react';
-import { CueMathLoader } from '@/components/ui/CueMathLoader';
+import { DeepRecallLoader } from '@/components/ui/DeepRecallLoader';
 import type { DeckListItem } from '@/lib/types';
 
 type SortOption = 'due' | 'recent' | 'mastery' | 'newest';
@@ -106,7 +106,7 @@ export function DeckList({ refreshKey = 0, compact = false }: { refreshKey?: num
     return copy;
   }, [filtered, sortBy]);
 
-  if (decks === null) return <CueMathLoader message="Loading your decks…" size="sm" />;
+  if (decks === null) return <DeepRecallLoader message="Loading your decks…" size="sm" />;
 
   if (error) return <p className="py-6 text-center text-xs text-red-600" role="alert">{error}</p>;
 

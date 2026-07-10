@@ -4,7 +4,7 @@
 
 ## Who I am
 
-I'm **Gaurav**, a student and aspiring developer participating in the **Cuemath AI Builder Challenge 2026**. I'm building DeepRecall — a flashcard engine — as my submission for Problem 1.
+I'm **Gaurav**, a student and aspiring developer participating in the **DeepRecall AI Builder Challenge 2026**. I'm building DeepRecall — a flashcard engine — as my submission for Problem 1.
 
 ## Skills & tools I know
 

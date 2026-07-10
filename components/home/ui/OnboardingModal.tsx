@@ -136,7 +136,7 @@ export function OnboardingModal({ open, onOpenChange, onComplete }: OnboardingMo
         hideCloseButton
         className="max-w-[440px] w-[calc(100vw-1.5rem)] gap-0 overflow-hidden rounded-2xl border-2 border-lab-teal/50 p-0 shadow-2xl sm:rounded-2xl"
       >
-        <DialogTitle className="sr-only">Get started with Cuemath Flashcards</DialogTitle>
+        <DialogTitle className="sr-only">Get started with DeepRecall Flashcards</DialogTitle>
         <DialogDescription className="sr-only">Complete a short onboarding to personalize your learning experience.</DialogDescription>
 
         <div className="relative bg-lab-teal px-4 pt-3 pb-2 text-white">

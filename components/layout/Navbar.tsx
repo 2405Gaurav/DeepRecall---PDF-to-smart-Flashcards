@@ -56,7 +56,7 @@ export function Navbar({
           transition={navSpring}
         >
           <span className="text-lg sm:text-xl md:text-2xl">DEEPRECALL</span>
-          <span className="text-[9px] font-semibold tracking-wide text-lab-teal/70 sm:text-[10px]">by Cuemath</span>
+          <span className="text-[9px] font-semibold tracking-wide text-lab-teal/70 sm:text-[10px]">by DeepRecall</span>
         </MotionLink>
 
         {links.length > 0 && (

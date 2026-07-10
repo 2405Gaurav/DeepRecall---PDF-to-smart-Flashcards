@@ -46,7 +46,7 @@ deeprecall/
 ├── components/
 │   ├── home/
 │   │   ├── ui/                   ← AuthModal, OnboardingModal, HeroSection
-│   │   ├── CuemathHomeShell.tsx  ← Home page shell with Suspense
+│   │   ├── DeepRecallHomeShell.tsx  ← Home page shell with Suspense
 │   │   ├── CueFlashcardSection.tsx← Interactive feature showcase
 │   │   ├── FeaturesSection.tsx
 │   │   └── FaqSection.tsx
@@ -65,7 +65,7 @@ deeprecall/
 │   └── ui/                       ← Shared custom UI
 │       ├── BadgeDisplay.tsx      ← StreakBanner, BadgeWall, NewBadgeCelebration
 │       ├── Confetti.tsx
-│       ├── CueMathLoader.tsx
+│       ├── DeepRecallLoader.tsx
 │       ├── FloatingParticles.tsx
 │       ├── SlideCtaButton.tsx
 │       └── StreakCounter.tsx

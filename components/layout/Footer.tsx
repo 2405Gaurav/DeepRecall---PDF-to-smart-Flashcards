@@ -22,7 +22,7 @@ const COLS = [
     links: [
       ['Study tips', '/#faq'],
       ['Spaced repetition', '/#how-it-works'],
-      ['Cuemath', 'https://www.cuemath.com'],
+      ['DeepRecall', 'https://www.deeprecall.com'],
     ],
   },
   {
@@ -73,11 +73,11 @@ export function Footer() {
         <div className="mt-14 flex flex-col items-start justify-between gap-6 border-t border-lab-line pt-10 sm:flex-row sm:items-center">
           <div>
             <p className="font-display text-xl font-bold text-lab-teal-dark">DEEPRECALL</p>
-            <p className="mt-0.5 text-[10px] font-semibold tracking-wide text-lab-teal/60">by Cuemath</p>
+            <p className="mt-0.5 text-[10px] font-semibold tracking-wide text-lab-teal/60">by DeepRecall</p>
             <p className="mt-1 text-sm text-lab-soft">Smart flashcard lab — personal progress & analytics</p>
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-lab-soft">
-            <span>© {new Date().getFullYear()} DeepRecall · A Cuemath learning project</span>
+            <span>© {new Date().getFullYear()} DeepRecall · A DeepRecall learning project</span>
             <Link href="/" className="underline hover:text-lab-teal-dark">Home</Link>
             <Link href="/studio" className="underline hover:text-lab-teal-dark">Studio</Link>
           </div>

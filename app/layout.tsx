@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: 'DeepRecall — Smart Flashcards',
     template: '%s · DeepRecall',
   },
-  description: 'PDF to flashcards — DeepRecall learning studio by Cuemath.',
+  description: 'PDF to flashcards — DeepRecall learning studio by DeepRecall.',
 };
 
 export default function RootLayout({

@@ -42,4 +42,4 @@ When I say "run the journal agent" or "let's do a session log":
 
 The How To AI guide says: *"Instead of re-explaining your preferences every time, you write them down once."*
 
-This agent ensures I log my process thinking consistently — which is also what the Cuemath challenge evaluators look for.
+This agent ensures I log my process thinking consistently — which is also what the DeepRecall challenge evaluators look for.

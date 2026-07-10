@@ -37,7 +37,7 @@ export function HeroSection({ isLoggedIn, user, openLogin, openSignup }: HeroSec
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
-        Cuemath · DeepRecall Learning Lab
+        DeepRecall · DeepRecall Learning Lab
       </motion.p>
       <motion.h1
         className="mx-auto mt-5 max-w-3xl text-center font-display text-3xl font-bold leading-[1.12] tracking-tight text-lab-teal-dark sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]"

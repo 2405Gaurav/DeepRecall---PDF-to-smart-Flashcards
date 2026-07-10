@@ -10,7 +10,7 @@ import {
 const FAQ = [
   {
     q: 'What is DeepRecall?',
-    a: 'A learning lab by Cuemath for long-term memory: PDFs become recall-heavy flashcards (not shallow trivia), practice uses spaced-style scheduling so easy cards fade out and hard ones return sooner, and your profile shows progress across decks.',
+    a: 'A learning lab by DeepRecall for long-term memory: PDFs become recall-heavy flashcards (not shallow trivia), practice uses spaced-style scheduling so easy cards fade out and hard ones return sooner, and your profile shows progress across decks.',
   },
   {
     q: 'Where do I create decks?',

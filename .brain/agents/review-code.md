@@ -39,7 +39,7 @@ When I say "review the code" or "pre-commit check":
    ### Delight (for kid-facing features)
    - [ ] Animations present and smooth
    - [ ] Empty states have encouraging messages
-   - [ ] Loading states use CueMathLoader
+   - [ ] Loading states use DeepRecallLoader
 
 3. **Report findings** as a concise list: ✅ passing, ⚠️ warnings, ❌ must-fix
 

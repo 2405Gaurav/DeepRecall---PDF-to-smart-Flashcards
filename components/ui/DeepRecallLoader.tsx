@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 
 /**
- * CueMathLoader — a playful, child-friendly loading animation.
+ * DeepRecallLoader — a playful, child-friendly loading animation.
  * Use this throught the app wherever we need a loading state.
  *
  * Features:
@@ -19,14 +19,14 @@ const MESSAGES = [
   'Did you know? Spaced repetition can cut study time by 50%.',
   'The Ebbinghaus forgetting curve: you forget 70% within 24 hours without review.',
   'Active recall is 2x more effective than re-reading.',
-  'CuemathsAI is crafting teacher-quality cards for you right now.',
+  'DeepRecallAI is crafting teacher-quality cards for you right now.',
   'Testing yourself beats re-reading every time.',
   'Sleeping after studying helps memories consolidate.',
 ];
 
 type LoaderSize = 'sm' | 'md' | 'lg';
 
-interface CueMathLoaderProps {
+interface DeepRecallLoaderProps {
   /** Custom message to show — overrides rotating messages */
   message?: string;
   /** Size variant */
@@ -183,7 +183,7 @@ function useEffectClient(fn: () => (() => void) | void) {
 /**
  * Main loader component — use this everywhere!
  */
-export function CueMathLoader({ message, size = 'md', className = '', fullScreen = false }: CueMathLoaderProps) {
+export function DeepRecallLoader({ message, size = 'md', className = '', fullScreen = false }: DeepRecallLoaderProps) {
   if (fullScreen) {
     return (
       <div className={`flex min-h-[60vh] items-center justify-center ${className}`}>
@@ -217,7 +217,7 @@ export function CueMathLoader({ message, size = 'md', className = '', fullScreen
  */
 const UPLOAD_TIPS = [
   { emoji: '📖', tip: 'Reading your PDF page by page…' },
-  { emoji: '🤖', tip: 'CuemathsAI is writing your cards right now.' },
+  { emoji: '🤖', tip: 'DeepRecallAI is writing your cards right now.' },
   { emoji: '🧠', tip: 'Did you know? Spaced repetition can cut study time by 50%.' },
   { emoji: '📊', tip: 'The Ebbinghaus forgetting curve shows you forget 70% within 24 hours without review.' },
   { emoji: '⚡', tip: 'Active recall is 2x more effective than re-reading.' },
