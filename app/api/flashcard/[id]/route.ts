@@ -5,6 +5,7 @@ import { readSessionUserId } from '@/lib/session-cookie';
 import { RO, type ReviewOutcomeLiteral } from '@/lib/db-enums';
 import { planReviewUpdate } from '@/lib/spaced-repetition';
 import { invalidateDashboardCache } from '@/lib/redis';
+import { rateLimit } from '@/lib/rate-limit';
 import type { ReviewOutcome } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -62,6 +63,15 @@ export async function PATCH(
           { status: 403 }
         );
       }
+    }
+
+    // ── Rate Limiting (protect DB from spam) ─────────────────────────────────
+    const limitResult = await rateLimit('review_card', sessionUserId || 'anon', 100, 60); // Max 100 reviews per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many review requests. Please slow down.' },
+        { status: 429 }
+      );
     }
 
     const ownerMatch = Boolean(sessionUserId && card.deck.userId === sessionUserId);

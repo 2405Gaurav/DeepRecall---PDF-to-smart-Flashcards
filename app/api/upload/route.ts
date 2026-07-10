@@ -6,6 +6,7 @@ import { readSessionUserId } from '@/lib/session-cookie';
 import { generateFlashcards, normalizeCardType, type CardCountPreset } from '@/lib/gemini';
 import { DS } from '@/lib/db-enums';
 import { invalidateDashboardCache } from '@/lib/redis';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -86,6 +87,15 @@ export async function POST(request: NextRequest) {
         { error: 'Complete onboarding first, then open your studio to build decks.' },
         { status: 401 }
       );
+
+    // ── Rate Limiting (protect Gemini & Memory) ─────────────────────────────
+    const limitResult = await rateLimit('upload_pdf', u.id, 2, 60); // Max 2 uploads per minute per user
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many uploads. Please wait a minute before generating more flashcards.' },
+        { status: 429 }
+      );
+    }
 
     // ── Phase 1: Parse PDF (fast, ~1-3s) ────────────────────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
